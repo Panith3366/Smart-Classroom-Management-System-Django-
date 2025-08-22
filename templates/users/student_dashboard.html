@@ -1,0 +1,393 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Dashboard - Smart Classroom{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="welcome-header">
+                <h1 class="h2 mb-0 text-gradient">
+                    <i class="fas fa-graduation-cap me-2"></i>Student Dashboard
+                </h1>
+                <p class="text-muted">Welcome back, {{ user.get_full_name }}! Here's your academic overview.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Info Card -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="student-info-card">
+                <div class="card-header">
+                    <h5><i class="fas fa-user me-2"></i>My Profile</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="student-avatar mb-3">
+                        {% if user.profile_picture %}
+                            <img src="{{ user.profile_picture.url }}" alt="Profile" class="avatar-img">
+                        {% else %}
+                            <div class="avatar-placeholder">
+                                {{ user.first_name.0 }}{{ user.last_name.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <h5>{{ user.get_full_name }}</h5>
+                    {% if user.student_profile %}
+                        <p class="student-id">ID: {{ user.student_profile.student_id }}</p>
+                        {% if user.student_profile.roll_number %}
+                            <p class="roll-number">Roll: {{ user.student_profile.roll_number }}</p>
+                        {% endif %}
+                        {% if user.student_profile.grade %}
+                            <span class="grade-badge">{{ user.student_profile.get_grade_display }}</span>
+                        {% endif %}
+                        {% if user.student_profile.classroom %}
+                            <p class="classroom-info mt-2">
+                                <i class="fas fa-door-open me-1"></i>{{ user.student_profile.classroom.name }}
+                            </p>
+                        {% endif %}
+                    {% endif %}
+                    <div class="mt-3">
+                        <a href="{% url 'users:user_detail' user.id %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-edit me-1"></i>View Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Stats -->
+        <div class="col-md-8">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="stat-card stat-primary">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>85%</h3>
+                            <p>Attendance Rate</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="stat-card stat-success">
+                        <div class="stat-icon">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>12</h3>
+                            <p>Assignments</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="stat-card stat-info">
+                        <div class="stat-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>6</h3>
+                            <p>Subjects</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="stat-card stat-warning">
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>A-</h3>
+                            <p>Average Grade</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="quick-actions-card">
+                <div class="card-header">
+                    <h5><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <a href="{% url 'attendance:attendance_student_profile' user.id %}" class="action-btn">
+                                <i class="fas fa-calendar-check"></i>
+                                <span>My Attendance</span>
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'assignments:student_assignments' %}" class="action-btn">
+                                <i class="fas fa-tasks"></i>
+                                <span>Assignments</span>
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'grades:my_grades' %}" class="action-btn">
+                                <i class="fas fa-chart-line"></i>
+                                <span>My Grades</span>
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'users:edit_user' user.id %}" class="action-btn">
+                                <i class="fas fa-user-edit"></i>
+                                <span>Edit Profile</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-12">
+            <div class="activity-card">
+                <div class="card-header">
+                    <h5><i class="fas fa-clock me-2"></i>Recent Activity</h5>
+                </div>
+                <div class="card-body">
+                    <div class="activity-list">
+                        <div class="activity-item">
+                            <div class="activity-icon bg-success">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="activity-content">
+                                <h6>Attendance Marked</h6>
+                                <p>Present in Mathematics class</p>
+                                <small class="text-muted">2 hours ago</small>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon bg-info">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div class="activity-content">
+                                <h6>Assignment Submitted</h6>
+                                <p>Physics Lab Report submitted</p>
+                                <small class="text-muted">1 day ago</small>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon bg-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="activity-content">
+                                <h6>Assignment Due</h6>
+                                <p>Chemistry homework due tomorrow</p>
+                                <small class="text-muted">2 days ago</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.text-gradient {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.welcome-header {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+}
+
+.student-info-card,
+.quick-actions-card,
+.activity-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.card-header {
+    background: rgba(102, 126, 234, 0.1);
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.card-body {
+    padding: 2rem;
+}
+
+.student-avatar {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+.student-id {
+    font-family: monospace;
+    background: rgba(102, 126, 234, 0.1);
+    padding: 0.3rem 0.6rem;
+    border-radius: 8px;
+    display: inline-block;
+    margin: 0.5rem 0;
+}
+
+.grade-badge {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+    padding: 0.4rem 0.8rem;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.classroom-info {
+    color: #6c757d;
+    margin: 0;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: white;
+}
+
+.stat-primary .stat-icon { background: linear-gradient(135deg, #667eea, #764ba2); }
+.stat-success .stat-icon { background: linear-gradient(135deg, #28a745, #20c997); }
+.stat-info .stat-icon { background: linear-gradient(135deg, #17a2b8, #007bff); }
+.stat-warning .stat-icon { background: linear-gradient(135deg, #ffc107, #fd7e14); }
+
+.stat-content h3 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 0;
+    color: #495057;
+}
+
+.stat-content p {
+    margin: 0;
+    color: #6c757d;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem 1rem;
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 15px;
+    text-decoration: none;
+    color: #495057;
+    transition: all 0.3s ease;
+    margin-bottom: 1rem;
+}
+
+.action-btn:hover {
+    background: rgba(102, 126, 234, 0.1);
+    transform: translateY(-3px);
+    color: #667eea;
+}
+
+.action-btn i {
+    font-size: 1.5rem;
+    color: #667eea;
+}
+
+.action-btn span {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 10px;
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.activity-content h6 {
+    margin: 0 0 0.25rem 0;
+    color: #495057;
+    font-weight: 600;
+}
+
+.activity-content p {
+    margin: 0 0 0.25rem 0;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+</style>
+{% endblock %}

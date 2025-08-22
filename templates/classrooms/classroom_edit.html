@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Edit Classroom</h1>
+        <a href="{% url 'classrooms_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Classrooms
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Classroom Information</h6>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="name" class="form-label">Classroom Name *</label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ classroom.name }}" required>
+                        <div class="form-text">e.g., Room 101, Science Lab, etc.</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="grade" class="form-label">Grade *</label>
+                        <input type="text" class="form-control" id="grade" name="grade" value="{{ classroom.grade }}" required>
+                        <div class="form-text">e.g., Grade 1, Grade 2, 10th Grade, etc.</div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="teacher" class="form-label">Assigned Teacher *</label>
+                        <select class="form-control" id="teacher" name="teacher" required>
+                            <option value="">Select a teacher</option>
+                            {% for teacher in teachers %}
+                                <option value="{{ teacher.id }}" {% if teacher.id == classroom.teacher.id %}selected{% endif %}>
+                                    {{ teacher.first_name }} {{ teacher.last_name }} ({{ teacher.username }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-end">
+                    <a href="{% url 'classrooms_list' %}" class="btn btn-secondary me-2">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Classroom
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}

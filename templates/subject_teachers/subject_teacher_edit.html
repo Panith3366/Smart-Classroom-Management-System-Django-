@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Edit Subject-Teacher Assignment</h1>
+        <a href="{% url 'subject_teachers_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Assignments
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Assignment Information</h6>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="subject" class="form-label">Subject *</label>
+                        <select class="form-control" id="subject" name="subject" required>
+                            <option value="">Select Subject</option>
+                            {% for subject in subjects %}
+                                <option value="{{ subject.id }}" {% if subject.id == subject_teacher.subject.id %}selected{% endif %}>
+                                    {{ subject.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="teacher" class="form-label">Teacher *</label>
+                        <select class="form-control" id="teacher" name="teacher" required>
+                            <option value="">Select Teacher</option>
+                            {% for teacher in teachers %}
+                                <option value="{{ teacher.id }}" {% if teacher.id == subject_teacher.teacher.id %}selected{% endif %}>
+                                    {{ teacher.first_name }} {{ teacher.last_name }} ({{ teacher.username }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="classroom" class="form-label">Classroom *</label>
+                        <select class="form-control" id="classroom" name="classroom" required>
+                            <option value="">Select Classroom</option>
+                            {% for classroom in classrooms %}
+                                <option value="{{ classroom.id }}" {% if classroom.id == subject_teacher.classroom.id %}selected{% endif %}>
+                                    {{ classroom.name }} - Grade {{ classroom.grade }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    This will update the assignment of the selected teacher to teach the selected subject in the selected classroom.
+                </div>
+                
+                <div class="d-flex justify-content-end">
+                    <a href="{% url 'subject_teachers_list' %}" class="btn btn-secondary me-2">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Assignment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}

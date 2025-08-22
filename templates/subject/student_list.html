@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<h3>Add Subject</h3>
+<form id="subjectForm">
+    <input type="text" name="name" placeholder="Subject Name" required>
+    <button type="submit">Add Subject</button>
+</form>
+
+<h3>Subjects List</h3>
+<ul id="subjectList"></ul>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+const token = "YOUR_JWT_TOKEN_HERE"; // Replace with actual JWT token
+
+function fetchSubjects() {
+    $.ajax({
+        url: '/api/subjects/',
+        type: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` },
+        success: function(data) {
+            $('#subjectList').empty();
+            data.forEach(subject => {
+                $('#subjectList').append(`<li>${subject.name}</li>`);
+            });
+        }
+    });
+}
+
+$('#subjectForm').on('submit', function(e) {
+    e.preventDefault();
+    const formData = { name: $('input[name="name"]').val() };
+    $.ajax({
+        url: '/api/subjects/',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(formData),
+        headers: { 'Authorization': `Bearer ${token}` },
+        success: function(data) {
+            alert('Subject added!');
+            fetchSubjects();
+        }
+    });
+});
+
+$(document).ready(fetchSubjects);
+</script>
+{% endblock %}

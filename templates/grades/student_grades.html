@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0">My Grades</h1>
+            <p class="text-muted">{{ student.get_full_name }}</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Grades</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_grades }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Average Grade</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ average_grade }}%</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-percentage fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Subjects</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ subjects_stats|length }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-book fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Grade Level</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {% if average_grade >= 90 %}A
+                                {% elif average_grade >= 80 %}B
+                                {% elif average_grade >= 70 %}C
+                                {% elif average_grade >= 60 %}D
+                                {% else %}F
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-medal fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subject-wise Performance -->
+    {% if subjects_stats %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Subject-wise Performance</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for subject, stats in subjects_stats.items %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card border-left-secondary">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ subject }}</h6>
+                                    <p class="card-text">
+                                        <strong>Average: {{ stats.average|floatformat:1 }}%</strong><br>
+                                        <small class="text-muted">{{ stats.count }} grade{{ stats.count|pluralize }}</small>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Grades -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Grades</h6>
+                </div>
+                <div class="card-body">
+                    {% if grades %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Subject</th>
+                                        <th>Assignment/Test</th>
+                                        <th>Grade</th>
+                                        <th>Percentage</th>
+                                        <th>Date</th>
+                                        <th>Teacher</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for grade in grades %}
+                                    <tr>
+                                        <td>{{ grade.subject.name }}</td>
+                                        <td>{{ grade.assignment_name|default:"General Grade" }}</td>
+                                        <td>
+                                            <span class="badge 
+                                                {% if grade.percentage >= 90 %}bg-success
+                                                {% elif grade.percentage >= 80 %}bg-primary
+                                                {% elif grade.percentage >= 70 %}bg-info
+                                                {% elif grade.percentage >= 60 %}bg-warning
+                                                {% else %}bg-danger
+                                                {% endif %}">
+                                                {{ grade.points }}/{{ grade.max_points }}
+                                            </span>
+                                        </td>
+                                        <td>{{ grade.percentage|floatformat:1 }}%</td>
+                                        <td>{{ grade.date_graded|date:"M d, Y" }}</td>
+                                        <td>{{ grade.teacher.get_full_name }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                            <h4>No Grades Yet</h4>
+                            <p class="text-muted">You don't have any grades recorded yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+.border-left-secondary {
+    border-left: 0.25rem solid #858796 !important;
+}
+.text-gray-800 {
+    color: #5a5c69 !important;
+}
+.text-gray-300 {
+    color: #dddfeb !important;
+}
+</style>
+{% endblock %}

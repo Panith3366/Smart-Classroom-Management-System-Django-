@@ -1,0 +1,565 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0 text-gradient">
+                        <i class="fas fa-cogs me-2"></i>System Configuration
+                    </h1>
+                    <p class="text-muted">Configure system settings and preferences</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-warning" onclick="resetToDefaults()">
+                        <i class="fas fa-undo me-2"></i>Reset to Defaults
+                    </button>
+                    <button class="btn btn-primary" onclick="saveAllSettings()">
+                        <i class="fas fa-save me-2"></i>Save All Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Information -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="system-info-card">
+                <div class="info-icon bg-primary">
+                    <i class="fas fa-server"></i>
+                </div>
+                <div class="info-content">
+                    <h6>System Version</h6>
+                    <p>{{ current_config.system_version }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="system-info-card">
+                <div class="info-icon bg-success">
+                    <i class="fas fa-calendar"></i>
+                </div>
+                <div class="info-content">
+                    <h6>Last Updated</h6>
+                    <p>{{ current_config.last_update }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="system-info-card">
+                <div class="info-icon bg-info">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="info-content">
+                    <h6>Active Users</h6>
+                    <p>24 online</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="system-info-card">
+                <div class="info-icon bg-warning">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="info-content">
+                    <h6>Security Status</h6>
+                    <p>Secure</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration Sections -->
+    <div class="row">
+        <!-- General Settings -->
+        <div class="col-md-6 mb-4">
+            <div class="config-card">
+                <div class="config-header">
+                    <h5><i class="fas fa-sliders-h me-2"></i>General Settings</h5>
+                </div>
+                <div class="config-body">
+                    <form id="generalSettingsForm">
+                        <div class="mb-3">
+                            <label for="systemName" class="form-label">System Name</label>
+                            <input type="text" class="form-control" id="systemName" 
+                                   value="Smart Classroom Management System">
+                        </div>
+                        <div class="mb-3">
+                            <label for="timezone" class="form-label">Timezone</label>
+                            <select class="form-select" id="timezone">
+                                <option value="UTC">UTC</option>
+                                <option value="EST" selected>Eastern Standard Time</option>
+                                <option value="PST">Pacific Standard Time</option>
+                                <option value="CST">Central Standard Time</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="dateFormat" class="form-label">Date Format</label>
+                            <select class="form-select" id="dateFormat">
+                                <option value="MM/DD/YYYY" selected>MM/DD/YYYY</option>
+                                <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                                <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="language" class="form-label">Default Language</label>
+                            <select class="form-select" id="language">
+                                <option value="en" selected>English</option>
+                                <option value="es">Spanish</option>
+                                <option value="fr">French</option>
+                                <option value="de">German</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attendance Settings -->
+        <div class="col-md-6 mb-4">
+            <div class="config-card">
+                <div class="config-header">
+                    <h5><i class="fas fa-calendar-check me-2"></i>Attendance Settings</h5>
+                </div>
+                <div class="config-body">
+                    <form id="attendanceSettingsForm">
+                        <div class="mb-3">
+                            <label for="attendanceThreshold" class="form-label">
+                                Attendance Threshold (%)
+                                <span class="text-muted" id="thresholdValue">{{ current_config.attendance_threshold }}%</span>
+                            </label>
+                            <input type="range" class="form-range" id="attendanceThreshold" 
+                                   min="50" max="100" value="{{ current_config.attendance_threshold }}"
+                                   oninput="updateThresholdValue(this.value)">
+                        </div>
+                        <div class="mb-3">
+                            <label for="lateThreshold" class="form-label">Late Arrival Threshold (minutes)</label>
+                            <input type="number" class="form-control" id="lateThreshold" 
+                                   value="15" min="1" max="60">
+                        </div>
+                        <div class="mb-3">
+                            <label for="autoMarkAbsent" class="form-label">Auto Mark Absent After (minutes)</label>
+                            <input type="number" class="form-control" id="autoMarkAbsent" 
+                                   value="30" min="10" max="120">
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="allowSelfCheckIn" checked>
+                            <label class="form-check-label" for="allowSelfCheckIn">
+                                Allow Student Self Check-in
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="requireLocation">
+                            <label class="form-check-label" for="requireLocation">
+                                Require Location for Check-in
+                            </label>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification Settings -->
+        <div class="col-md-6 mb-4">
+            <div class="config-card">
+                <div class="config-header">
+                    <h5><i class="fas fa-bell me-2"></i>Notification Settings</h5>
+                </div>
+                <div class="config-body">
+                    <form id="notificationSettingsForm">
+                        <div class="mb-3">
+                            <label for="notificationFrequency" class="form-label">Notification Frequency</label>
+                            <select class="form-select" id="notificationFrequency">
+                                <option value="immediate">Immediate</option>
+                                <option value="hourly">Hourly</option>
+                                <option value="daily" selected>Daily</option>
+                                <option value="weekly">Weekly</option>
+                            </select>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="emailNotifications" 
+                                   {% if current_config.email_notifications %}checked{% endif %}>
+                            <label class="form-check-label" for="emailNotifications">
+                                Enable Email Notifications
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="smsNotifications">
+                            <label class="form-check-label" for="smsNotifications">
+                                Enable SMS Notifications
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="pushNotifications" checked>
+                            <label class="form-check-label" for="pushNotifications">
+                                Enable Push Notifications
+                            </label>
+                        </div>
+                        <div class="mb-3">
+                            <label for="notificationEmail" class="form-label">Admin Notification Email</label>
+                            <input type="email" class="form-control" id="notificationEmail" 
+                                   value="admin@smartclassroom.com">
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Settings -->
+        <div class="col-md-6 mb-4">
+            <div class="config-card">
+                <div class="config-header">
+                    <h5><i class="fas fa-shield-alt me-2"></i>Security Settings</h5>
+                </div>
+                <div class="config-body">
+                    <form id="securitySettingsForm">
+                        <div class="mb-3">
+                            <label for="sessionTimeout" class="form-label">Session Timeout (minutes)</label>
+                            <input type="number" class="form-control" id="sessionTimeout" 
+                                   value="30" min="5" max="480">
+                        </div>
+                        <div class="mb-3">
+                            <label for="passwordPolicy" class="form-label">Password Policy</label>
+                            <select class="form-select" id="passwordPolicy">
+                                <option value="basic">Basic (8+ characters)</option>
+                                <option value="medium" selected>Medium (8+ chars, numbers)</option>
+                                <option value="strong">Strong (8+ chars, numbers, symbols)</option>
+                            </select>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="twoFactorAuth">
+                            <label class="form-check-label" for="twoFactorAuth">
+                                Enable Two-Factor Authentication
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="loginAttemptLimit" checked>
+                            <label class="form-check-label" for="loginAttemptLimit">
+                                Limit Login Attempts (5 attempts)
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="auditLogging" checked>
+                            <label class="form-check-label" for="auditLogging">
+                                Enable Audit Logging
+                            </label>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Backup Settings -->
+        <div class="col-md-6 mb-4">
+            <div class="config-card">
+                <div class="config-header">
+                    <h5><i class="fas fa-database me-2"></i>Backup Settings</h5>
+                </div>
+                <div class="config-body">
+                    <form id="backupSettingsForm">
+                        <div class="mb-3">
+                            <label for="backupSchedule" class="form-label">Backup Schedule</label>
+                            <select class="form-select" id="backupSchedule">
+                                <option value="daily">Daily</option>
+                                <option value="weekly" selected>Weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="manual">Manual Only</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="backupTime" class="form-label">Backup Time</label>
+                            <input type="time" class="form-control" id="backupTime" value="02:00">
+                        </div>
+                        <div class="mb-3">
+                            <label for="retentionPeriod" class="form-label">Retention Period (days)</label>
+                            <input type="number" class="form-control" id="retentionPeriod" 
+                                   value="30" min="7" max="365">
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="cloudBackup">
+                            <label class="form-check-label" for="cloudBackup">
+                                Enable Cloud Backup
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="encryptBackups" checked>
+                            <label class="form-check-label" for="encryptBackups">
+                                Encrypt Backups
+                            </label>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Settings -->
+        <div class="col-md-6 mb-4">
+            <div class="config-card">
+                <div class="config-header">
+                    <h5><i class="fas fa-tachometer-alt me-2"></i>Performance Settings</h5>
+                </div>
+                <div class="config-body">
+                    <form id="performanceSettingsForm">
+                        <div class="mb-3">
+                            <label for="cacheTimeout" class="form-label">Cache Timeout (minutes)</label>
+                            <input type="number" class="form-control" id="cacheTimeout" 
+                                   value="15" min="1" max="60">
+                        </div>
+                        <div class="mb-3">
+                            <label for="pageSize" class="form-label">Default Page Size</label>
+                            <select class="form-select" id="pageSize">
+                                <option value="10">10 items</option>
+                                <option value="25" selected>25 items</option>
+                                <option value="50">50 items</option>
+                                <option value="100">100 items</option>
+                            </select>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="enableCaching" checked>
+                            <label class="form-check-label" for="enableCaching">
+                                Enable Data Caching
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="compressResponses" checked>
+                            <label class="form-check-label" for="compressResponses">
+                                Compress API Responses
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="lazyLoading" checked>
+                            <label class="form-check-label" for="lazyLoading">
+                                Enable Lazy Loading
+                            </label>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row">
+        <div class="col-12">
+            <div class="action-panel">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="action-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <span>Changes will be applied immediately after saving.</span>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn btn-outline-secondary me-2" onclick="previewChanges()">
+                            <i class="fas fa-eye me-2"></i>Preview Changes
+                        </button>
+                        <button class="btn btn-outline-warning me-2" onclick="resetToDefaults()">
+                            <i class="fas fa-undo me-2"></i>Reset All
+                        </button>
+                        <button class="btn btn-success" onclick="saveAllSettings()">
+                            <i class="fas fa-save me-2"></i>Save All Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Styles -->
+<style>
+.text-gradient {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.system-info-card {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    height: 100%;
+}
+
+.info-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+}
+
+.info-content h6 {
+    margin: 0 0 5px 0;
+    color: #666;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.info-content p {
+    margin: 0;
+    color: #333;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.config-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    overflow: hidden;
+    height: 100%;
+}
+
+.config-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 20px 25px;
+}
+
+.config-header h5 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.config-body {
+    padding: 25px;
+}
+
+.action-panel {
+    background: white;
+    border-radius: 15px;
+    padding: 20px 25px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    margin-top: 20px;
+}
+
+.action-info {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.form-range::-webkit-slider-thumb {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.form-range::-moz-range-thumb {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border: none;
+}
+</style>
+
+<!-- Scripts -->
+<script>
+function updateThresholdValue(value) {
+    document.getElementById('thresholdValue').textContent = value + '%';
+}
+
+function saveAllSettings() {
+    // Collect all form data
+    const settings = {
+        general: collectFormData('generalSettingsForm'),
+        attendance: collectFormData('attendanceSettingsForm'),
+        notifications: collectFormData('notificationSettingsForm'),
+        security: collectFormData('securitySettingsForm'),
+        backup: collectFormData('backupSettingsForm'),
+        performance: collectFormData('performanceSettingsForm')
+    };
+    
+    // Simulate saving
+    showNotification('All settings saved successfully!', 'success');
+    console.log('Settings saved:', settings);
+}
+
+function collectFormData(formId) {
+    const form = document.getElementById(formId);
+    const formData = new FormData(form);
+    const data = {};
+    
+    // Get all form elements
+    const elements = form.querySelectorAll('input, select, textarea');
+    elements.forEach(element => {
+        if (element.type === 'checkbox') {
+            data[element.id] = element.checked;
+        } else if (element.type === 'range') {
+            data[element.id] = parseInt(element.value);
+        } else {
+            data[element.id] = element.value;
+        }
+    });
+    
+    return data;
+}
+
+function resetToDefaults() {
+    if (confirm('Are you sure you want to reset all settings to default values?')) {
+        // Reset all forms to default values
+        document.querySelectorAll('form').forEach(form => {
+            form.reset();
+        });
+        
+        // Reset specific values
+        document.getElementById('attendanceThreshold').value = 75;
+        updateThresholdValue(75);
+        
+        showNotification('All settings reset to defaults!', 'warning');
+    }
+}
+
+function previewChanges() {
+    const settings = {
+        general: collectFormData('generalSettingsForm'),
+        attendance: collectFormData('attendanceSettingsForm'),
+        notifications: collectFormData('notificationSettingsForm'),
+        security: collectFormData('securitySettingsForm'),
+        backup: collectFormData('backupSettingsForm'),
+        performance: collectFormData('performanceSettingsForm')
+    };
+    
+    // Show preview in console (in real app, show in modal)
+    console.log('Settings Preview:', settings);
+    showNotification('Settings preview logged to console. Check developer tools.', 'info');
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show`;
+    notification.style.position = 'fixed';
+    notification.style.top = '20px';
+    notification.style.right = '20px';
+    notification.style.zIndex = '9999';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 5000);
+}
+
+// Auto-save functionality
+let autoSaveTimeout;
+document.addEventListener('change', function(e) {
+    if (e.target.matches('input, select, textarea')) {
+        clearTimeout(autoSaveTimeout);
+        autoSaveTimeout = setTimeout(() => {
+            showNotification('Settings auto-saved!', 'info');
+        }, 2000);
+    }
+});
+</script>
+{% endblock %}

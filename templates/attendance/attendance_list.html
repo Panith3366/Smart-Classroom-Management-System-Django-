@@ -1,0 +1,1110 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0 text-gradient">
+                        <i class="fas fa-user-check me-2"></i>Student Attendance
+                    </h1>
+                    <p class="text-muted">Monitor and track individual student attendance records</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'attendance:attendance_dashboard' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                    </a>
+                    <a href="{% url 'attendance:attendance_session_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>New Session
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="filter-card">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="classroom" class="form-label">Classroom</label>
+                        <select class="form-select" id="classroom" name="classroom">
+                            <option value="">All Classrooms</option>
+                            {% for classroom in classrooms %}
+                            <option value="{{ classroom.id }}" {% if current_filters.classroom == classroom.id|stringformat:"s" %}selected{% endif %}>
+                                {{ classroom.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="subject" class="form-label">Subject</label>
+                        <select class="form-select" id="subject" name="subject">
+                            <option value="">All Subjects</option>
+                            {% for subject in subjects %}
+                            <option value="{{ subject.id }}" {% if current_filters.subject == subject.id|stringformat:"s" %}selected{% endif %}>
+                                {{ subject.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="date" class="form-label">Date Range</label>
+                        <input type="date" class="form-control" id="date" name="date" value="{{ current_filters.date }}">
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter me-2"></i>Apply Filters
+                        </button>
+                        <a href="{% url 'attendance:attendance_list' %}" class="btn btn-outline-secondary ms-2">
+                            <i class="fas fa-times me-2"></i>Clear
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Attendance List -->
+    <div class="row">
+        <div class="col-12">
+            {% if page_obj %}
+                <div class="attendance-table-container">
+                    <div class="table-responsive">
+                        <table class="table table-hover attendance-table">
+                            <thead class="table-header">
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Classroom</th>
+                                    <th>Total Sessions</th>
+                                    <th>Present</th>
+                                    <th>Late</th>
+                                    <th>Absent</th>
+                                    <th>Attendance %</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for data in page_obj %}
+                                <tr class="student-row" data-student-id="{{ data.student.id }}">
+                                    <td>
+                                        <div class="student-info">
+                                            <div class="student-avatar">
+                                                {{ data.student.first_name.0 }}{{ data.student.last_name.0 }}
+                                            </div>
+                                            <div class="student-details">
+                                                <h6 class="mb-0">{{ data.student.get_full_name }}</h6>
+                                                <small class="text-muted">{{ data.student.email }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if data.student.student_profile and data.student.student_profile.classroom %}
+                                            <span class="badge bg-info">{{ data.student.student_profile.classroom.name }}</span>
+                                        {% else %}
+                                            <span class="text-muted">No classroom</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="total-sessions-container">
+                                            <span class="stat-number editable-sessions" 
+                                                  data-student-id="{{ data.student.id }}" 
+                                                  data-original-value="{{ data.total_sessions }}"
+                                                  title="Click to edit total sessions">
+                                                {{ data.total_sessions }}
+                                            </span>
+
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="attendance-count-container">
+                                            <span class="stat-number text-success editable-count" 
+                                                  data-student-id="{{ data.student.id }}" 
+                                                  data-count-type="present"
+                                                  data-original-value="{{ data.present_count }}"
+                                                  title="Click to edit present count">
+                                                {{ data.present_count }}
+                                            </span>
+
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="attendance-count-container">
+                                            <span class="stat-number text-warning editable-count" 
+                                                  data-student-id="{{ data.student.id }}" 
+                                                  data-count-type="late"
+                                                  data-original-value="{{ data.late_count }}"
+                                                  title="Click to edit late count">
+                                                {{ data.late_count }}
+                                            </span>
+                                            {% if data.has_custom_attendance and data.actual_late != data.late_count %}
+
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="attendance-count-container">
+                                            <span class="stat-number text-danger editable-count" 
+                                                  data-student-id="{{ data.student.id }}" 
+                                                  data-count-type="absent"
+                                                  data-original-value="{{ data.absent_count }}"
+                                                  title="Click to edit absent count">
+                                                {{ data.absent_count }}
+                                            </span>
+                                            {% if data.has_custom_attendance and data.actual_absent != data.absent_count %}
+
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="attendance-progress">
+                                            <div class="progress-circle" data-percentage="{{ data.attendance_percentage }}">
+                                                <span class="percentage-text">{{ data.attendance_percentage }}%</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                <div class="pagination-container">
+                    <nav aria-label="Student attendance pagination">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                            </li>
+                            {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-user-times"></i>
+                    </div>
+                    <h4>No Students Found</h4>
+                    <p class="text-muted">No students match your current filters or no students are enrolled.</p>
+                    <a href="{% url 'users:students_list' %}" class="btn btn-primary">
+                        <i class="fas fa-user-plus me-2"></i>Manage Students
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Actions Panel -->
+    <div class="quick-actions-panel">
+        <div class="quick-actions-header">
+            <h6><i class="fas fa-bolt me-2"></i>Quick Actions</h6>
+        </div>
+        <div class="quick-actions-body">
+
+            <button class="btn btn-warning btn-sm" onclick="exportAttendance()">
+                <i class="fas fa-download me-2"></i>Export Data
+            </button>
+            <button class="btn btn-info btn-sm" onclick="generateReport()">
+                <i class="fas fa-chart-bar me-2"></i>Generate Report
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="showBulkUpdateModal()">
+                <i class="fas fa-edit me-2"></i>Bulk Update Sessions
+            </button>
+            <div class="dropdown">
+                <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-users-cog me-2"></i>Bulk Update Attendance
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="showBulkAttendanceModal('present')">
+                        <i class="fas fa-check text-success me-2"></i>Present Count
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="showBulkAttendanceModal('late')">
+                        <i class="fas fa-clock text-warning me-2"></i>Late Count
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="showBulkAttendanceModal('absent')">
+                        <i class="fas fa-times text-danger me-2"></i>Absent Count
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Update Modal -->
+<div class="modal fade" id="bulkUpdateModal" tabindex="-1" aria-labelledby="bulkUpdateModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bulkUpdateModalLabel">
+                    <i class="fas fa-edit me-2"></i>Bulk Update Total Sessions
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="bulkSessionsValue" class="form-label">Total Sessions for All Students</label>
+                    <input type="number" class="form-control" id="bulkSessionsValue" min="0" placeholder="Enter total sessions">
+                    <div class="form-text">This will update the total sessions for all visible students in the current filter.</div>
+                </div>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> This action will update total sessions for all students currently displayed. 
+                    The value cannot be less than their actual attendance records.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="performBulkUpdate()">
+                    <i class="fas fa-save me-2"></i>Update All
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Styles -->
+<style>
+.text-gradient {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.filter-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.attendance-table-container {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+
+.attendance-table {
+    margin-bottom: 0;
+}
+
+.table-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.table-header th {
+    border: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    padding: 20px 15px;
+}
+
+.student-row {
+    transition: all 0.3s ease;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.student-row:hover {
+    background: rgba(102, 126, 234, 0.05);
+    transform: translateX(5px);
+}
+
+.student-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.student-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.student-details h6 {
+    color: #333;
+    font-weight: 600;
+}
+
+.stat-number {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.attendance-progress {
+    display: flex;
+    justify-content: center;
+}
+
+.progress-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: conic-gradient(#28a745 0deg, #28a745 var(--percentage, 0deg), #e9ecef var(--percentage, 0deg));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.progress-circle::before {
+    content: '';
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: white;
+    position: absolute;
+}
+
+.percentage-text {
+    position: relative;
+    z-index: 2;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #333;
+}
+
+
+
+.empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #dee2e6;
+    margin-bottom: 20px;
+}
+
+.quick-actions-panel {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    z-index: 1000;
+    min-width: 200px;
+}
+
+.quick-actions-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 12px 15px;
+    border-radius: 15px 15px 0 0;
+}
+
+.quick-actions-header h6 {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.quick-actions-body {
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.pagination-container {
+    margin-top: 30px;
+}
+
+.pagination .page-link {
+    border-radius: 8px;
+    margin: 0 2px;
+    border: 1px solid #dee2e6;
+    color: #667eea;
+}
+
+.pagination .page-item.active .page-link {
+    background: #667eea;
+    border-color: #667eea;
+}
+
+/* Editable sessions styling */
+.editable-sessions {
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.editable-sessions:hover {
+    background-color: rgba(102, 126, 234, 0.1);
+    border: 1px dashed #667eea;
+}
+
+.editable-sessions:hover::after {
+    content: "✏️";
+    position: absolute;
+    right: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+}
+
+.total-sessions-container {
+    position: relative;
+}
+
+.total-sessions-container small {
+    font-size: 0.75rem;
+    color: #6c757d !important;
+}
+
+/* Editable attendance counts styling */
+.editable-count {
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    position: relative;
+    display: inline-block;
+    min-width: 30px;
+    text-align: center;
+}
+
+.editable-count:hover {
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 1px dashed currentColor;
+    transform: scale(1.1);
+}
+
+.editable-count:hover::after {
+    content: "✏️";
+    position: absolute;
+    right: -18px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+}
+
+.attendance-count-container {
+    position: relative;
+    text-align: center;
+}
+
+.attendance-count-container small {
+    font-size: 0.7rem;
+    color: #6c757d !important;
+    margin-top: 2px;
+}
+</style>
+
+<!-- JavaScript -->
+<script>
+// Initialize progress circles
+document.addEventListener('DOMContentLoaded', function() {
+    const progressCircles = document.querySelectorAll('.progress-circle');
+    progressCircles.forEach(circle => {
+        const percentage = circle.dataset.percentage;
+        const degrees = (percentage / 100) * 360;
+        circle.style.setProperty('--percentage', degrees + 'deg');
+    });
+});
+
+
+
+function exportAttendance() {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/advanced/api/export/';
+    
+    const csrfToken = document.createElement('input');
+    csrfToken.type = 'hidden';
+    csrfToken.name = 'csrfmiddlewaretoken';
+    csrfToken.value = getCookie('csrftoken');
+    
+    const exportType = document.createElement('input');
+    exportType.type = 'hidden';
+    exportType.name = 'export_type';
+    exportType.value = 'attendance';
+    
+    const format = document.createElement('input');
+    format.type = 'hidden';
+    format.name = 'format';
+    format.value = 'csv';
+    
+    form.appendChild(csrfToken);
+    form.appendChild(exportType);
+    form.appendChild(format);
+    
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+    
+    showToast('Exporting attendance data...', 'info');
+}
+
+function generateReport() {
+    window.location.href = '/attendance/reports/';
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'error' ? 'danger' : type} position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 5000);
+}
+
+// Inline editing for total sessions
+document.addEventListener('DOMContentLoaded', function() {
+    const editableSessions = document.querySelectorAll('.editable-sessions');
+    
+    editableSessions.forEach(element => {
+        element.addEventListener('click', function() {
+            if (this.querySelector('input')) return; // Already editing
+            
+            const currentValue = this.textContent.trim();
+            const studentId = this.dataset.studentId;
+            
+            // Create input field
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.min = '0';
+            input.value = currentValue;
+            input.className = 'form-control form-control-sm';
+            input.style.width = '80px';
+            input.style.display = 'inline-block';
+            
+            // Replace content with input
+            this.innerHTML = '';
+            this.appendChild(input);
+            input.focus();
+            input.select();
+            
+            // Handle save on Enter or blur
+            const saveValue = () => {
+                const newValue = parseInt(input.value);
+                if (isNaN(newValue) || newValue < 0) {
+                    showToast('Please enter a valid positive number', 'error');
+                    input.focus();
+                    return;
+                }
+                
+                // Update via AJAX
+                updateTotalSessions(studentId, newValue, this);
+            };
+            
+            // Handle cancel on Escape
+            const cancelEdit = () => {
+                this.textContent = currentValue;
+            };
+            
+            input.addEventListener('blur', saveValue);
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveValue();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cancelEdit();
+                }
+            });
+        });
+    });
+});
+
+// Inline editing for attendance counts (Present, Late, Absent)
+document.addEventListener('DOMContentLoaded', function() {
+    const editableCounts = document.querySelectorAll('.editable-count');
+    
+    editableCounts.forEach(element => {
+        element.addEventListener('click', function() {
+            if (this.querySelector('input')) return; // Already editing
+            
+            const currentValue = this.textContent.trim();
+            const studentId = this.dataset.studentId;
+            const countType = this.dataset.countType;
+            
+            // Create input field
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.min = '0';
+            input.value = currentValue;
+            input.className = 'form-control form-control-sm';
+            input.style.width = '60px';
+            input.style.display = 'inline-block';
+            
+            // Replace content with input
+            this.innerHTML = '';
+            this.appendChild(input);
+            input.focus();
+            input.select();
+            
+            // Handle save on Enter or blur
+            const saveValue = () => {
+                const newValue = parseInt(input.value);
+                if (isNaN(newValue) || newValue < 0) {
+                    showToast('Please enter a valid non-negative number', 'error');
+                    input.focus();
+                    return;
+                }
+                
+                // Update via AJAX
+                updateAttendanceCount(studentId, countType, newValue, this);
+            };
+            
+            // Handle cancel on Escape
+            const cancelEdit = () => {
+                this.textContent = currentValue;
+            };
+            
+            input.addEventListener('blur', saveValue);
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveValue();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cancelEdit();
+                }
+            });
+        });
+    });
+});
+
+function updateTotalSessions(studentId, totalSessions, element) {
+    fetch('/attendance/update-total-sessions/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            student_id: studentId,
+            total_sessions: totalSessions
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the display
+            element.textContent = data.total_sessions;
+            element.dataset.originalValue = data.total_sessions;
+            
+            // Update attendance percentage in the same row
+            const row = element.closest('tr');
+            const percentageCell = row.querySelector('.percentage-text');
+            if (percentageCell) {
+                percentageCell.textContent = data.attendance_percentage + '%';
+            }
+            
+            showToast(data.message, 'success');
+        } else {
+            element.textContent = element.dataset.originalValue;
+            showToast(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        element.textContent = element.dataset.originalValue;
+        showToast('Error updating total sessions', 'error');
+    });
+}
+
+function showBulkUpdateModal() {
+    const modal = new bootstrap.Modal(document.getElementById('bulkUpdateModal'));
+    modal.show();
+}
+
+function performBulkUpdate() {
+    const totalSessions = parseInt(document.getElementById('bulkSessionsValue').value);
+    
+    if (isNaN(totalSessions) || totalSessions < 0) {
+        showToast('Please enter a valid positive number', 'error');
+        return;
+    }
+    
+    const studentRows = document.querySelectorAll('.student-row');
+    const promises = [];
+    
+    studentRows.forEach(row => {
+        const studentId = row.dataset.studentId;
+        const sessionElement = row.querySelector('.editable-sessions');
+        
+        promises.push(
+            fetch('/attendance/update-total-sessions/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    student_id: studentId,
+                    total_sessions: totalSessions
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update the display
+                    sessionElement.textContent = data.total_sessions;
+                    sessionElement.dataset.originalValue = data.total_sessions;
+                    
+                    // Update attendance percentage
+                    const percentageCell = row.querySelector('.percentage-text');
+                    if (percentageCell) {
+                        percentageCell.textContent = data.attendance_percentage + '%';
+                    }
+                    
+                    return { success: true, studentId: studentId };
+                } else {
+                    return { success: false, studentId: studentId, message: data.message };
+                }
+            })
+        );
+    });
+    
+    Promise.all(promises)
+        .then(results => {
+            const successful = results.filter(r => r.success).length;
+            const failed = results.filter(r => !r.success);
+            
+            if (failed.length === 0) {
+                showToast(`Successfully updated total sessions for ${successful} students`, 'success');
+            } else {
+                showToast(`Updated ${successful} students, ${failed.length} failed`, 'warning');
+            }
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('bulkUpdateModal'));
+            modal.hide();
+            
+            // Clear input
+            document.getElementById('bulkSessionsValue').value = '';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error performing bulk update', 'error');
+        });
+}
+
+function updateAttendanceCount(studentId, countType, countValue, element) {
+    fetch('/attendance/update-attendance-count/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            student_id: studentId,
+            count_type: countType,
+            count_value: countValue
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the display
+            element.textContent = data[countType + '_count'];
+            element.dataset.originalValue = data[countType + '_count'];
+            
+            // Update all attendance counts and percentage in the same row
+            const row = element.closest('tr');
+            
+            // Update Present count with custom indicator
+            const presentElement = row.querySelector('.editable-count[data-count-type="present"]');
+            if (presentElement) {
+                presentElement.textContent = data.present_count;
+                presentElement.dataset.originalValue = data.present_count;
+                
+                // Add or update custom indicator
+                let container = presentElement.closest('.attendance-count-container');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.className = 'attendance-count-container';
+                    presentElement.parentNode.insertBefore(container, presentElement);
+                    container.appendChild(presentElement);
+                }
+                
+                // Remove existing indicator
+                const existingIndicator = container.querySelector('small');
+                if (existingIndicator) {
+                    existingIndicator.remove();
+                }
+                
+                // Add custom indicator if different from actual
+                if (data.actual_present !== undefined && data.present_count !== data.actual_present) {
+                    const indicator = document.createElement('small');
+                    indicator.className = 'd-block text-muted';
+                    indicator.textContent = `(${data.actual_present} actual)`;
+                    container.appendChild(indicator);
+                }
+            }
+            
+            // Update Late count with custom indicator
+            const lateElement = row.querySelector('.editable-count[data-count-type="late"]');
+            if (lateElement) {
+                lateElement.textContent = data.late_count;
+                lateElement.dataset.originalValue = data.late_count;
+                
+                // Add or update custom indicator
+                let container = lateElement.closest('.attendance-count-container');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.className = 'attendance-count-container';
+                    lateElement.parentNode.insertBefore(container, lateElement);
+                    container.appendChild(lateElement);
+                }
+                
+                // Remove existing indicator
+                const existingIndicator = container.querySelector('small');
+                if (existingIndicator) {
+                    existingIndicator.remove();
+                }
+                
+                // Add custom indicator if different from actual
+                if (data.actual_late !== undefined && data.late_count !== data.actual_late) {
+                    const indicator = document.createElement('small');
+                    indicator.className = 'd-block text-muted';
+                    indicator.textContent = `(${data.actual_late} actual)`;
+                    container.appendChild(indicator);
+                }
+            }
+            
+            // Update Absent count with custom indicator
+            const absentElement = row.querySelector('.editable-count[data-count-type="absent"]');
+            if (absentElement) {
+                absentElement.textContent = data.absent_count;
+                absentElement.dataset.originalValue = data.absent_count;
+                
+                // Add or update custom indicator
+                let container = absentElement.closest('.attendance-count-container');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.className = 'attendance-count-container';
+                    absentElement.parentNode.insertBefore(container, absentElement);
+                    container.appendChild(absentElement);
+                }
+                
+                // Remove existing indicator
+                const existingIndicator = container.querySelector('small');
+                if (existingIndicator) {
+                    existingIndicator.remove();
+                }
+                
+                // Add custom indicator if different from actual
+                if (data.actual_absent !== undefined && data.absent_count !== data.actual_absent) {
+                    const indicator = document.createElement('small');
+                    indicator.className = 'd-block text-muted';
+                    indicator.textContent = `(${data.actual_absent} actual)`;
+                    container.appendChild(indicator);
+                }
+            }
+            
+            // Update Total Sessions if it exists
+            const totalElement = row.querySelector('.editable-sessions');
+            if (totalElement && data.total_sessions) {
+                totalElement.textContent = data.total_sessions;
+                totalElement.dataset.originalValue = data.total_sessions;
+            }
+            
+            // Update attendance percentage
+            const percentageCell = row.querySelector('.percentage-text');
+            if (percentageCell) {
+                percentageCell.textContent = data.attendance_percentage + '%';
+            }
+            
+            // Update the progress circle
+            const progressCircle = row.querySelector('.progress-circle');
+            if (progressCircle) {
+                const degrees = (data.attendance_percentage / 100) * 360;
+                progressCircle.style.setProperty('--percentage', degrees + 'deg');
+                progressCircle.dataset.percentage = data.attendance_percentage;
+            }
+            
+            showToast(data.message, 'success');
+        } else {
+            element.textContent = element.dataset.originalValue;
+            showToast(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        element.textContent = element.dataset.originalValue;
+        showToast('Error updating ' + countType + ' count', 'error');
+    });
+}
+
+function showBulkAttendanceModal(countType) {
+    // Create dynamic modal for attendance counts
+    const modalId = 'bulkAttendanceModal';
+    let modal = document.getElementById(modalId);
+    
+    if (!modal) {
+        // Create modal HTML
+        const modalHTML = `
+            <div class="modal fade" id="${modalId}" tabindex="-1" aria-labelledby="bulkAttendanceModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="bulkAttendanceModalLabel">
+                                <i class="fas fa-edit me-2"></i>Bulk Update <span id="countTypeTitle"></span> Count
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="bulkCountValue" class="form-label"><span id="countTypeLabel"></span> Count for All Students</label>
+                                <input type="number" class="form-control" id="bulkCountValue" min="0" placeholder="Enter count">
+                                <div class="form-text">This will update the <span id="countTypeText"></span> count for all visible students in the current filter.</div>
+                            </div>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Info:</strong> This will create custom attendance records that override the actual attendance records.
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" onclick="performBulkAttendanceUpdate()">
+                                <i class="fas fa-save me-2"></i>Update All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        modal = document.getElementById(modalId);
+    }
+    
+    // Update modal content based on count type
+    const countTypeTitle = modal.querySelector('#countTypeTitle');
+    const countTypeLabel = modal.querySelector('#countTypeLabel');
+    const countTypeText = modal.querySelector('#countTypeText');
+    
+    countTypeTitle.textContent = countType.charAt(0).toUpperCase() + countType.slice(1);
+    countTypeLabel.textContent = countType.charAt(0).toUpperCase() + countType.slice(1);
+    countTypeText.textContent = countType.toLowerCase();
+    
+    // Store count type for later use
+    modal.dataset.countType = countType;
+    
+    // Show modal
+    const bootstrapModal = new bootstrap.Modal(modal);
+    bootstrapModal.show();
+}
+
+function performBulkAttendanceUpdate() {
+    const modal = document.getElementById('bulkAttendanceModal');
+    const countType = modal.dataset.countType;
+    const countValue = parseInt(document.getElementById('bulkCountValue').value);
+    
+    if (isNaN(countValue) || countValue < 0) {
+        showToast('Please enter a valid non-negative number', 'error');
+        return;
+    }
+    
+    const studentRows = document.querySelectorAll('.student-row');
+    const studentIds = Array.from(studentRows).map(row => row.dataset.studentId);
+    
+    fetch('/attendance/bulk-update-attendance-counts/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            count_type: countType,
+            count_value: countValue,
+            student_ids: studentIds
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            
+            // Close modal
+            const bootstrapModal = bootstrap.Modal.getInstance(modal);
+            bootstrapModal.hide();
+            
+            // Clear input
+            document.getElementById('bulkCountValue').value = '';
+            
+            // Refresh the page to show updated data
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Error performing bulk update', 'error');
+    });
+}
+</script>
+{% endblock %}

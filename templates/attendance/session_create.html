@@ -1,0 +1,806 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0 text-gradient">
+                        <i class="fas fa-plus-circle me-2"></i>Create Attendance Session
+                    </h1>
+                    <p class="text-muted">Set up a new attendance tracking session with advanced features</p>
+                </div>
+                <a href="{% url 'attendance:attendance_dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Creation Form with Steps -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="creation-wizard">
+                <!-- Step Indicator -->
+                <div class="step-indicator mb-4">
+                    <div class="step active" data-step="1">
+                        <div class="step-number">1</div>
+                        <div class="step-label">Basic Info</div>
+                    </div>
+                    <div class="step" data-step="2">
+                        <div class="step-number">2</div>
+                        <div class="step-label">Settings</div>
+                    </div>
+                    <div class="step" data-step="3">
+                        <div class="step-number">3</div>
+                        <div class="step-label">Advanced</div>
+                    </div>
+                    <div class="step" data-step="4">
+                        <div class="step-number">4</div>
+                        <div class="step-label">Review</div>
+                    </div>
+                </div>
+
+                <form method="post" id="sessionForm" class="wizard-form">
+                    {% csrf_token %}
+                    
+                    <!-- Step 1: Basic Information -->
+                    <div class="step-content active" data-step="1">
+                        <div class="glass-card">
+                            <div class="card-header-gradient">
+                                <h5 class="mb-0 text-white">
+                                    <i class="fas fa-info-circle me-2"></i>Basic Information
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-12 mb-3">
+                                        <label for="title" class="form-label">Session Title *</label>
+                                        <input type="text" class="form-control modern-input" id="title" name="title" 
+                                               placeholder="e.g., Morning Attendance - Math Class" required>
+                                        <div class="form-text">Choose a descriptive title for your session</div>
+                                    </div>
+                                    
+                                    <div class="col-md-12 mb-3">
+                                        <label for="description" class="form-label">Description</label>
+                                        <textarea class="form-control modern-input" id="description" name="description" 
+                                                  rows="3" placeholder="Optional description for this session"></textarea>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="classroom" class="form-label">Classroom *</label>
+                                        <select class="form-select modern-select" id="classroom" name="classroom" required>
+                                            <option value="">Select Classroom</option>
+                                            {% for classroom in classrooms %}
+                                            <option value="{{ classroom.id }}">{{ classroom.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="subject" class="form-label">Subject</label>
+                                        <select class="form-select modern-select" id="subject" name="subject">
+                                            <option value="">Select Subject (Optional)</option>
+                                            {% for subject in subjects %}
+                                            <option value="{{ subject.id }}">{{ subject.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="attendance_type" class="form-label">Attendance Type</label>
+                                        <select class="form-select modern-select" id="attendance_type" name="attendance_type">
+                                            <option value="daily">Daily Attendance</option>
+                                            <option value="subject">Subject-wise Attendance</option>
+                                            <option value="event">Event Attendance</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Time Settings -->
+                    <div class="step-content" data-step="2">
+                        <div class="glass-card">
+                            <div class="card-header-gradient">
+                                <h5 class="mb-0 text-white">
+                                    <i class="fas fa-clock me-2"></i>Time & Duration Settings
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="duration_minutes" class="form-label">Session Duration (minutes)</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control modern-input" id="duration_minutes" 
+                                                   name="duration_minutes" value="60" min="5" max="480">
+                                            <span class="input-group-text">minutes</span>
+                                        </div>
+                                        <div class="duration-presets mt-2">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="setDuration(30)">30 min</button>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="setDuration(60)">1 hour</button>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="setDuration(90)">1.5 hours</button>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="setDuration(120)">2 hours</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="late_threshold_minutes" class="form-label">Late Threshold (minutes)</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control modern-input" id="late_threshold_minutes" 
+                                                   name="late_threshold_minutes" value="15" min="1" max="60">
+                                            <span class="input-group-text">minutes</span>
+                                        </div>
+                                        <div class="form-text">Students arriving after this time will be marked as late</div>
+                                    </div>
+                                    
+                                    <div class="col-12 mb-3">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-check form-switch modern-switch">
+                                                    <input class="form-check-input" type="checkbox" id="auto_close" name="auto_close" checked>
+                                                    <label class="form-check-label" for="auto_close">
+                                                        Auto-close session
+                                                    </label>
+                                                </div>
+                                                <div class="form-text">Automatically close session when duration expires</div>
+                                            </div>
+                                            
+                                            <div class="col-md-6">
+                                                <div class="form-check form-switch modern-switch">
+                                                    <input class="form-check-input" type="checkbox" id="allow_late_marking" name="allow_late_marking" checked>
+                                                    <label class="form-check-label" for="allow_late_marking">
+                                                        Allow late marking
+                                                    </label>
+                                                </div>
+                                                <div class="form-text">Allow attendance marking after session starts</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Advanced Features -->
+                    <div class="step-content" data-step="3">
+                        <div class="glass-card">
+                            <div class="card-header-gradient">
+                                <h5 class="mb-0 text-white">
+                                    <i class="fas fa-cogs me-2"></i>Advanced Features
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Location-based Attendance -->
+                                <div class="feature-section mb-4">
+                                    <div class="feature-header">
+                                        <div class="form-check form-switch modern-switch">
+                                            <input class="form-check-input" type="checkbox" id="location_required" name="location_required">
+                                            <label class="form-check-label" for="location_required">
+                                                <strong>Location-based Attendance</strong>
+                                            </label>
+                                        </div>
+                                        <div class="form-text">Require students to be within a specific location to mark attendance</div>
+                                    </div>
+                                    
+                                    <div class="feature-content" id="locationSettings" style="display: none;">
+                                        <div class="row mt-3">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="latitude" class="form-label">Latitude</label>
+                                                <input type="number" class="form-control modern-input" id="latitude" 
+                                                       name="latitude" step="0.000001" placeholder="e.g., 40.7128">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="longitude" class="form-label">Longitude</label>
+                                                <input type="number" class="form-control modern-input" id="longitude" 
+                                                       name="longitude" step="0.000001" placeholder="e.g., -74.0060">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="location_radius_meters" class="form-label">Radius (meters)</label>
+                                                <input type="number" class="form-control modern-input" id="location_radius_meters" 
+                                                       name="location_radius_meters" value="100" min="10" max="1000">
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-outline-info btn-sm" onclick="getCurrentLocation()">
+                                            <i class="fas fa-map-marker-alt me-2"></i>Use Current Location
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- QR Code Attendance -->
+                                <div class="feature-section mb-4">
+                                    <div class="feature-header">
+                                        <div class="form-check form-switch modern-switch">
+                                            <input class="form-check-input" type="checkbox" id="qr_code_enabled" name="qr_code_enabled">
+                                            <label class="form-check-label" for="qr_code_enabled">
+                                                <strong>QR Code Attendance</strong>
+                                            </label>
+                                        </div>
+                                        <div class="form-text">Generate a QR code for quick attendance marking</div>
+                                    </div>
+                                </div>
+
+                                <!-- Notifications -->
+                                <div class="feature-section">
+                                    <div class="feature-header">
+                                        <div class="form-check form-switch modern-switch">
+                                            <input class="form-check-input" type="checkbox" id="send_notifications" name="send_notifications" checked>
+                                            <label class="form-check-label" for="send_notifications">
+                                                <strong>Send Notifications</strong>
+                                            </label>
+                                        </div>
+                                        <div class="form-text">Notify students when the session starts</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Review -->
+                    <div class="step-content" data-step="4">
+                        <div class="glass-card">
+                            <div class="card-header-gradient">
+                                <h5 class="mb-0 text-white">
+                                    <i class="fas fa-check-circle me-2"></i>Review & Create
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="review-section">
+                                    <h6>Session Summary</h6>
+                                    <div class="summary-grid">
+                                        <div class="summary-item">
+                                            <strong>Title:</strong>
+                                            <span id="review-title">-</span>
+                                        </div>
+                                        <div class="summary-item">
+                                            <strong>Classroom:</strong>
+                                            <span id="review-classroom">-</span>
+                                        </div>
+                                        <div class="summary-item">
+                                            <strong>Duration:</strong>
+                                            <span id="review-duration">-</span>
+                                        </div>
+                                        <div class="summary-item">
+                                            <strong>Type:</strong>
+                                            <span id="review-type">-</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="features-summary mt-4">
+                                        <h6>Enabled Features</h6>
+                                        <div id="enabled-features" class="feature-badges">
+                                            <!-- Features will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Buttons -->
+                    <div class="wizard-navigation mt-4">
+                        <button type="button" class="btn btn-outline-secondary" id="prevBtn" onclick="changeStep(-1)" style="display: none;">
+                            <i class="fas fa-arrow-left me-2"></i>Previous
+                        </button>
+                        <button type="button" class="btn btn-primary" id="nextBtn" onclick="changeStep(1)">
+                            Next<i class="fas fa-arrow-right ms-2"></i>
+                        </button>
+                        <button type="submit" class="btn btn-success" id="submitBtn" style="display: none;">
+                            <i class="fas fa-rocket me-2"></i>Create Session
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Sidebar with Tips -->
+        <div class="col-lg-4">
+            <div class="tips-card glass-card">
+                <div class="card-header-gradient">
+                    <h6 class="mb-0 text-white">
+                        <i class="fas fa-lightbulb me-2"></i>Pro Tips
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="tip-content">
+                            <strong>Optimal Duration</strong>
+                            <p>Set session duration based on your class length. Most classes work well with 60-90 minutes.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="tip-content">
+                            <strong>Location Tracking</strong>
+                            <p>Use location-based attendance for outdoor activities or to ensure students are in the right classroom.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-qrcode"></i>
+                        </div>
+                        <div class="tip-content">
+                            <strong>QR Codes</strong>
+                            <p>QR codes make attendance marking faster and reduce contact during health-conscious times.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Card -->
+            <div class="preview-card glass-card mt-4">
+                <div class="card-header-gradient">
+                    <h6 class="mb-0 text-white">
+                        <i class="fas fa-eye me-2"></i>Live Preview
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="session-preview">
+                        <div class="preview-header">
+                            <h6 id="preview-title">Untitled Session</h6>
+                            <span class="badge bg-primary" id="preview-type">Daily</span>
+                        </div>
+                        <div class="preview-details">
+                            <div class="detail-item">
+                                <i class="fas fa-school"></i>
+                                <span id="preview-classroom">No classroom selected</span>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-clock"></i>
+                                <span id="preview-duration">60 minutes</span>
+                            </div>
+                        </div>
+                        <div class="preview-features" id="preview-features">
+                            <!-- Features will be shown here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Styles -->
+<style>
+.text-gradient {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.creation-wizard {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+}
+
+.step-indicator {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+}
+
+.step-indicator::before {
+    content: '';
+    position: absolute;
+    top: 25px;
+    left: 25px;
+    right: 25px;
+    height: 2px;
+    background: #e9ecef;
+    z-index: 1;
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+}
+
+.step-number {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #e9ecef;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.step.active .step-number {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.step.completed .step-number {
+    background: #28a745;
+    color: white;
+}
+
+.step-label {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.step.active .step-label {
+    color: #667eea;
+    font-weight: bold;
+}
+
+.step-content {
+    display: none;
+}
+
+.step-content.active {
+    display: block;
+    animation: fadeInUp 0.5s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.card-header-gradient {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    padding: 20px;
+    border: none;
+}
+
+.modern-input, .modern-select {
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 12px 16px;
+    transition: all 0.3s ease;
+}
+
+.modern-input:focus, .modern-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.modern-switch .form-check-input {
+    width: 3rem;
+    height: 1.5rem;
+    border-radius: 1rem;
+}
+
+.modern-switch .form-check-input:checked {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+.duration-presets {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.feature-section {
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 20px;
+    transition: all 0.3s ease;
+}
+
+.feature-section:hover {
+    border-color: #667eea;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
+}
+
+.feature-header {
+    margin-bottom: 15px;
+}
+
+.feature-content {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+}
+
+.wizard-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.summary-item {
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.feature-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tips-card .tip-item {
+    display: flex;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.tips-card .tip-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.tip-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(102, 126, 234, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #667eea;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.tip-content p {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
+.session-preview {
+    text-align: center;
+}
+
+.preview-header {
+    margin-bottom: 15px;
+}
+
+.preview-details {
+    margin-bottom: 15px;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+    color: #6c757d;
+}
+
+.detail-item i {
+    margin-right: 8px;
+    width: 16px;
+}
+
+.preview-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: center;
+}
+</style>
+
+<!-- JavaScript -->
+<script>
+let currentStep = 1;
+const totalSteps = 4;
+
+function changeStep(direction) {
+    const newStep = currentStep + direction;
+    
+    if (newStep < 1 || newStep > totalSteps) return;
+    
+    // Validate current step before proceeding
+    if (direction > 0 && !validateStep(currentStep)) {
+        return;
+    }
+    
+    // Hide current step
+    document.querySelector(`.step-content[data-step="${currentStep}"]`).classList.remove('active');
+    document.querySelector(`.step[data-step="${currentStep}"]`).classList.remove('active');
+    
+    // Mark completed steps
+    if (direction > 0) {
+        document.querySelector(`.step[data-step="${currentStep}"]`).classList.add('completed');
+    }
+    
+    // Show new step
+    currentStep = newStep;
+    document.querySelector(`.step-content[data-step="${currentStep}"]`).classList.add('active');
+    document.querySelector(`.step[data-step="${currentStep}"]`).classList.add('active');
+    
+    // Update navigation buttons
+    updateNavigation();
+    
+    // Update review if on last step
+    if (currentStep === 4) {
+        updateReview();
+    }
+}
+
+function updateNavigation() {
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    prevBtn.style.display = currentStep > 1 ? 'inline-block' : 'none';
+    nextBtn.style.display = currentStep < totalSteps ? 'inline-block' : 'none';
+    submitBtn.style.display = currentStep === totalSteps ? 'inline-block' : 'none';
+}
+
+function validateStep(step) {
+    switch(step) {
+        case 1:
+            const title = document.getElementById('title').value;
+            const classroom = document.getElementById('classroom').value;
+            if (!title || !classroom) {
+                alert('Please fill in all required fields');
+                return false;
+            }
+            break;
+        case 2:
+            const duration = document.getElementById('duration_minutes').value;
+            if (!duration || duration < 5) {
+                alert('Please set a valid duration (minimum 5 minutes)');
+                return false;
+            }
+            break;
+    }
+    return true;
+}
+
+function updateReview() {
+    // Update review summary
+    document.getElementById('review-title').textContent = document.getElementById('title').value || '-';
+    
+    const classroomSelect = document.getElementById('classroom');
+    document.getElementById('review-classroom').textContent = 
+        classroomSelect.options[classroomSelect.selectedIndex].text || '-';
+    
+    document.getElementById('review-duration').textContent = 
+        document.getElementById('duration_minutes').value + ' minutes';
+    
+    const typeSelect = document.getElementById('attendance_type');
+    document.getElementById('review-type').textContent = 
+        typeSelect.options[typeSelect.selectedIndex].text;
+    
+    // Update enabled features
+    const featuresContainer = document.getElementById('enabled-features');
+    featuresContainer.innerHTML = '';
+    
+    const features = [
+        { id: 'auto_close', label: 'Auto-close', color: 'primary' },
+        { id: 'allow_late_marking', label: 'Late Marking', color: 'info' },
+        { id: 'location_required', label: 'Location-based', color: 'warning' },
+        { id: 'qr_code_enabled', label: 'QR Code', color: 'success' },
+        { id: 'send_notifications', label: 'Notifications', color: 'secondary' }
+    ];
+    
+    features.forEach(feature => {
+        if (document.getElementById(feature.id).checked) {
+            const badge = document.createElement('span');
+            badge.className = `badge bg-${feature.color}`;
+            badge.textContent = feature.label;
+            featuresContainer.appendChild(badge);
+        }
+    });
+}
+
+function setDuration(minutes) {
+    document.getElementById('duration_minutes').value = minutes;
+    updatePreview();
+}
+
+function getCurrentLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            document.getElementById('latitude').value = position.coords.latitude.toFixed(6);
+            document.getElementById('longitude').value = position.coords.longitude.toFixed(6);
+        });
+    } else {
+        alert('Geolocation is not supported by this browser.');
+    }
+}
+
+function updatePreview() {
+    // Update live preview
+    const title = document.getElementById('title').value || 'Untitled Session';
+    document.getElementById('preview-title').textContent = title;
+    
+    const typeSelect = document.getElementById('attendance_type');
+    document.getElementById('preview-type').textContent = 
+        typeSelect.options[typeSelect.selectedIndex].text;
+    
+    const classroomSelect = document.getElementById('classroom');
+    document.getElementById('preview-classroom').textContent = 
+        classroomSelect.selectedIndex > 0 ? classroomSelect.options[classroomSelect.selectedIndex].text : 'No classroom selected';
+    
+    const duration = document.getElementById('duration_minutes').value;
+    document.getElementById('preview-duration').textContent = duration + ' minutes';
+    
+    // Update preview features
+    const previewFeatures = document.getElementById('preview-features');
+    previewFeatures.innerHTML = '';
+    
+    const enabledFeatures = [];
+    if (document.getElementById('location_required').checked) enabledFeatures.push('📍 Location');
+    if (document.getElementById('qr_code_enabled').checked) enabledFeatures.push('📱 QR Code');
+    if (document.getElementById('send_notifications').checked) enabledFeatures.push('🔔 Notifications');
+    
+    enabledFeatures.forEach(feature => {
+        const span = document.createElement('span');
+        span.className = 'badge bg-light text-dark me-1 mb-1';
+        span.textContent = feature;
+        previewFeatures.appendChild(span);
+    });
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Location settings toggle
+    document.getElementById('location_required').addEventListener('change', function() {
+        const settings = document.getElementById('locationSettings');
+        settings.style.display = this.checked ? 'block' : 'none';
+    });
+    
+    // Update preview on input changes
+    const inputs = ['title', 'classroom', 'attendance_type', 'duration_minutes'];
+    inputs.forEach(id => {
+        document.getElementById(id).addEventListener('input', updatePreview);
+        document.getElementById(id).addEventListener('change', updatePreview);
+    });
+    
+    // Feature checkboxes
+    const checkboxes = ['location_required', 'qr_code_enabled', 'send_notifications'];
+    checkboxes.forEach(id => {
+        document.getElementById(id).addEventListener('change', updatePreview);
+    });
+    
+    // Initialize preview
+    updatePreview();
+});
+</script>
+{% endblock %}

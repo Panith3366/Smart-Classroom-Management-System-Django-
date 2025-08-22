@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-3">Dashboard</h1>
+            <p class="text-muted">Welcome to Smart Classroom Management System</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Teachers</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_teachers }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chalkboard-teacher fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Students</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_students }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-graduate fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Subjects</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_subjects }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-book fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Classrooms</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_classrooms }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-school fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Statistics -->
+    <div class="row mb-4">
+        <div class="col-xl-6 col-md-6 mb-4">
+            <div class="card border-left-secondary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">Total Assignments</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_assignments }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-tasks fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6 col-md-6 mb-4">
+            <div class="card border-left-dark shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-dark text-uppercase mb-1">Total Quizzes</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_quizzes }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-question-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Announcements -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Announcements</h6>
+                </div>
+                <div class="card-body">
+                    {% if recent_announcements %}
+                        <div class="list-group">
+                            {% for announcement in recent_announcements %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ announcement.classroom.name }}</h6>
+                                    <small>{{ announcement.created_at|date:"M d, Y H:i" }}</small>
+                                </div>
+                                <p class="mb-1">{{ announcement.message|truncatewords:20 }}</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No recent announcements.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-2 col-md-3 col-sm-4 mb-3">
+                            <a href="{% url 'classroom_add' %}" class="btn btn-warning btn-block">
+                                <i class="fas fa-plus"></i> Add Classroom
+                            </a>
+                        </div>
+                        <div class="col-lg-2 col-md-3 col-sm-4 mb-3">
+                            <a href="{% url 'student_add' %}" class="btn btn-success btn-block">
+                                <i class="fas fa-plus"></i> Add Student
+                            </a>
+                        </div>
+                        <div class="col-lg-2 col-md-3 col-sm-4 mb-3">
+                            <a href="{% url 'teacher_add' %}" class="btn btn-primary btn-block">
+                                <i class="fas fa-plus"></i> Add Teacher
+                            </a>
+                        </div>
+                        <div class="col-lg-2 col-md-3 col-sm-4 mb-3">
+                            <a href="{% url 'subject_add' %}" class="btn btn-info btn-block">
+                                <i class="fas fa-plus"></i> Add Subject
+                            </a>
+                        </div>
+                        <div class="col-lg-2 col-md-3 col-sm-4 mb-3">
+                            <a href="{% url 'assignment_add' %}" class="btn btn-secondary btn-block">
+                                <i class="fas fa-plus"></i> Add Assignment
+                            </a>
+                        </div>
+                        <div class="col-lg-2 col-md-3 col-sm-4 mb-3">
+                            <a href="{% url 'quiz_add' %}" class="btn btn-dark btn-block">
+                                <i class="fas fa-plus"></i> Add Quiz
+                            </a>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-2 col-md-3 col-sm-4 mb-3">
+                            <a href="{% url 'subject_teacher_add' %}" class="btn btn-outline-primary btn-block">
+                                <i class="fas fa-link"></i> Assign Teacher
+                            </a>
+                        </div>
+                        <div class="col-lg-2 col-md-3 col-sm-4 mb-3">
+                            <a href="/admin/" class="btn btn-outline-dark btn-block">
+                                <i class="fas fa-cog"></i> Admin Panel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+.border-left-secondary {
+    border-left: 0.25rem solid #858796 !important;
+}
+.border-left-dark {
+    border-left: 0.25rem solid #5a5c69 !important;
+}
+.text-gray-800 {
+    color: #5a5c69 !important;
+}
+.text-gray-300 {
+    color: #dddfeb !important;
+}
+</style>
+
+<!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}

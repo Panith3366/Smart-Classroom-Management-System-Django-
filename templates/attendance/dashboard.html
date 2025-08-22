@@ -1,0 +1,434 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section with Animated Cards -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0 text-gradient">
+                        <i class="fas fa-calendar-check me-2"></i>Attendance Dashboard
+                    </h1>
+                    <p class="text-muted">Monitor and manage student attendance with advanced analytics</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'attendance:attendance_session_create' %}" class="btn btn-primary btn-animated">
+                        <i class="fas fa-plus me-2"></i>New Session
+                    </a>
+                    <a href="{% url 'attendance:attendance_reports' %}" class="btn btn-outline-info btn-animated">
+                        <i class="fas fa-chart-line me-2"></i>Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards with Animations -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card stat-card-primary h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div class="ms-3">
+                            <div class="stat-number">{{ total_sessions }}</div>
+                            <div class="stat-label">Total Sessions</div>
+                        </div>
+                    </div>
+                    <div class="stat-progress">
+                        <div class="progress">
+                            <div class="progress-bar bg-primary" style="width: 100%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card stat-card-success h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="ms-3">
+                            <div class="stat-number">{{ today_sessions }}</div>
+                            <div class="stat-label">Today's Sessions</div>
+                        </div>
+                    </div>
+                    <div class="stat-progress">
+                        <div class="progress">
+                            <div class="progress-bar bg-success" style="width: 85%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card stat-card-warning h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="ms-3">
+                            <div class="stat-number">{{ active_sessions.count }}</div>
+                            <div class="stat-label">Active Sessions</div>
+                        </div>
+                    </div>
+                    <div class="stat-progress">
+                        <div class="progress">
+                            <div class="progress-bar bg-warning" style="width: 70%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card stat-card-info h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="ms-3">
+                            <div class="stat-number">92%</div>
+                            <div class="stat-label">Avg. Attendance</div>
+                        </div>
+                    </div>
+                    <div class="stat-progress">
+                        <div class="progress">
+                            <div class="progress-bar bg-info" style="width: 92%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Sessions and Recent Activity -->
+    <div class="row">
+        <!-- Active Sessions -->
+        <div class="col-lg-8 mb-4">
+            <div class="card modern-card">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-broadcast-tower me-2"></i>Active Sessions
+                        <span class="badge bg-light text-primary ms-2">{{ active_sessions.count }}</span>
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if active_sessions %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Session</th>
+                                        <th>Classroom</th>
+                                        <th>Subject</th>
+                                        <th>Progress</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for session in active_sessions %}
+                                    <tr class="session-row" data-session-id="{{ session.id }}">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="session-indicator active"></div>
+                                                <div>
+                                                    <div class="fw-bold">{{ session.title }}</div>
+                                                    <small class="text-muted">{{ session.start_time|date:"H:i" }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ session.classroom.name }}</span>
+                                        </td>
+                                        <td>
+                                            {% if session.subject %}
+                                                <span class="badge bg-info">{{ session.subject.name }}</span>
+                                            {% else %}
+                                                <span class="text-muted">General</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar bg-success" 
+                                                     style="width: {{ session.attendance_percentage }}%"
+                                                     title="{{ session.attendance_percentage }}% attendance">
+                                                </div>
+                                            </div>
+                                            <small class="text-muted">{{ session.present_count }}/{{ session.total_students }}</small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{% url 'attendance:attendance_session_detail' session.id %}" 
+                                                   class="btn btn-outline-primary btn-sm">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <button class="btn btn-outline-success btn-sm" 
+                                                        onclick="quickMarkAll({{ session.id }}, 'present')">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Active Sessions</h5>
+                            <p class="text-muted">Create a new attendance session to get started</p>
+                            <a href="{% url 'attendance:attendance_session_create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Create Session
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions & Recent Activity -->
+        <div class="col-lg-4 mb-4">
+            <!-- Quick Actions -->
+            <div class="card modern-card mb-4">
+                <div class="card-header bg-gradient-success text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'attendance:attendance_session_create' %}" class="btn btn-outline-primary btn-action">
+                            <i class="fas fa-plus-circle me-2"></i>New Session
+                        </a>
+                        <a href="{% url 'attendance:attendance_sessions_list' %}" class="btn btn-outline-info btn-action">
+                            <i class="fas fa-list me-2"></i>All Sessions
+                        </a>
+                        <a href="{% url 'attendance:attendance_reports' %}" class="btn btn-outline-warning btn-action">
+                            <i class="fas fa-chart-bar me-2"></i>Generate Report
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Sessions -->
+            <div class="card modern-card">
+                <div class="card-header bg-gradient-info text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-history me-2"></i>Recent Sessions
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_sessions %}
+                        <div class="list-group list-group-flush">
+                            {% for session in recent_sessions %}
+                            <div class="list-group-item border-0">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">{{ session.title }}</h6>
+                                        <p class="mb-1 text-muted small">{{ session.classroom.name }}</p>
+                                        <small class="text-muted">{{ session.start_time|timesince }} ago</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-{{ session.status|yesno:'success,warning,danger' }}">
+                                            {{ session.get_status_display }}
+                                        </span>
+                                        <div class="small text-muted">{{ session.attendance_percentage }}%</div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-clock fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-0">No recent sessions</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Styles -->
+<style>
+.text-gradient {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.stat-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+
+.stat-card-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+.stat-card-success { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
+.stat-card-warning { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; }
+.stat-card-info { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; }
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.stat-progress {
+    margin-top: 15px;
+}
+
+.modern-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.bg-gradient-success {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.bg-gradient-info {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.session-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.session-indicator.active {
+    background: #28a745;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+}
+
+.btn-animated {
+    transition: all 0.3s ease;
+}
+
+.btn-animated:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.btn-action {
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.btn-action:hover {
+    transform: translateX(5px);
+}
+
+.session-row {
+    transition: all 0.3s ease;
+}
+
+.session-row:hover {
+    background-color: rgba(102, 126, 234, 0.05);
+}
+</style>
+
+<!-- JavaScript for Interactive Features -->
+<script>
+function quickMarkAll(sessionId, status) {
+    if (confirm(`Mark all students as ${status}?`)) {
+        // AJAX call to mark all students
+        fetch(`/attendance/sessions/${sessionId}/mark-all/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                'status': status
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        });
+    }
+}
+
+// Auto-refresh active sessions every 30 seconds
+setInterval(() => {
+    const activeSessionsCard = document.querySelector('.card-body .table-responsive');
+    if (activeSessionsCard) {
+        // Add subtle loading indicator
+        activeSessionsCard.style.opacity = '0.8';
+        setTimeout(() => {
+            activeSessionsCard.style.opacity = '1';
+        }, 500);
+    }
+}, 30000);
+
+// Add loading animations
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.stat-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+</script>
+{% endblock %}

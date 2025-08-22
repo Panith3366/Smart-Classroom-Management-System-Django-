@@ -1,0 +1,308 @@
+{% extends 'base.html' %}
+
+{% block title %}Teachers List - Smart Classroom{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0 text-gradient">
+                        <i class="fas fa-chalkboard-teacher me-2"></i>Teachers Management
+                    </h1>
+                    <p class="text-muted">Manage teacher profiles and academic information</p>
+                </div>
+                <div class="d-flex gap-2">
+                    {% if user.role == 'admin' %}
+                    <a href="{% url 'users:signup' %}" class="btn btn-primary">
+                        <i class="fas fa-user-plus me-2"></i>Add Teacher
+                    </a>
+                    <a href="{% url 'users:user_management' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-users-cog me-2"></i>All Users
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'users:students_list' %}" class="btn btn-outline-success">
+                        <i class="fas fa-graduation-cap me-2"></i>Students
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Teachers List -->
+    <div class="row">
+        <div class="col-12">
+            {% if teachers %}
+                <div class="teachers-table-container">
+                    <div class="table-responsive">
+                        <table class="table table-hover teachers-table">
+                            <thead class="table-header">
+                                <tr>
+                                    <th>Teacher</th>
+                                    <th>Teacher ID</th>
+                                    <th>Department</th>
+                                    <th>Qualification</th>
+                                    <th>Experience</th>
+                                    <th>Contact</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for teacher in teachers %}
+                                <tr class="teacher-row">
+                                    <td>
+                                        <div class="teacher-info">
+                                            <div class="teacher-avatar">
+                                                {% if teacher.profile_picture %}
+                                                    <img src="{{ teacher.profile_picture.url }}" alt="Profile" class="avatar-img">
+                                                {% else %}
+                                                    <div class="avatar-placeholder">
+                                                        {{ teacher.first_name.0 }}{{ teacher.last_name.0 }}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="teacher-details">
+                                                <h6 class="mb-0">{{ teacher.get_full_name }}</h6>
+                                                <small class="text-muted">{{ teacher.email }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if teacher.teacher_profile %}
+                                            <span class="teacher-id-badge">{{ teacher.teacher_profile.teacher_id }}</span>
+                                        {% else %}
+                                            <span class="text-muted">Not set</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if teacher.teacher_profile.department %}
+                                            <span class="department-badge">{{ teacher.teacher_profile.department }}</span>
+                                        {% else %}
+                                            <span class="text-muted">Not set</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if teacher.teacher_profile.qualification %}
+                                            <span class="qualification-text">{{ teacher.teacher_profile.qualification }}</span>
+                                        {% else %}
+                                            <span class="text-muted">Not set</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if teacher.teacher_profile.experience_years %}
+                                            <span class="experience-text">{{ teacher.teacher_profile.experience_years }} years</span>
+                                        {% else %}
+                                            <span class="text-muted">Not set</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="contact-info">
+                                            {% if teacher.phone_number %}
+                                            <div class="contact-item">
+                                                <i class="fas fa-phone text-muted"></i>
+                                                <span>{{ teacher.phone_number }}</span>
+                                            </div>
+                                            {% endif %}
+                                            {% if teacher.teacher_profile.emergency_contact_name %}
+                                            <div class="contact-item">
+                                                <i class="fas fa-user-friends text-muted"></i>
+                                                <span>{{ teacher.teacher_profile.emergency_contact_name }}</span>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <a href="{% url 'users:user_detail' teacher.id %}" 
+                                               class="btn btn-sm btn-outline-primary" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if user.role == 'admin' %}
+                                            <a href="{% url 'users:edit_user' teacher.id %}" 
+                                               class="btn btn-sm btn-outline-success" title="Edit Teacher">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <h4>No Teachers Found</h4>
+                    <p class="text-muted">No teachers are currently registered in the system.</p>
+                    {% if user.role == 'admin' %}
+                    <a href="{% url 'users:signup' %}" class="btn btn-primary">
+                        <i class="fas fa-user-plus me-2"></i>Add First Teacher
+                    </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.text-gradient {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.teachers-table-container {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+
+.teachers-table {
+    margin-bottom: 0;
+}
+
+.table-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.table-header th {
+    border: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    padding: 20px 15px;
+}
+
+.teacher-row {
+    transition: all 0.3s ease;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.teacher-row:hover {
+    background: rgba(102, 126, 234, 0.05);
+    transform: translateX(5px);
+}
+
+.teacher-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.teacher-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.teacher-details h6 {
+    color: #333;
+    font-weight: 600;
+}
+
+.teacher-id-badge {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-family: monospace;
+}
+
+.department-badge {
+    background: rgba(0, 123, 255, 0.2);
+    color: #007bff;
+    padding: 0.3rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.qualification-text,
+.experience-text {
+    font-weight: 500;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.contact-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+}
+
+.contact-item i {
+    width: 12px;
+    text-align: center;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 4px;
+}
+
+.action-buttons .btn {
+    padding: 0.375rem 0.5rem;
+    border-radius: 6px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+}
+
+.empty-state h4 {
+    color: #495057;
+    margin-bottom: 1rem;
+}
+</style>
+{% endblock %}

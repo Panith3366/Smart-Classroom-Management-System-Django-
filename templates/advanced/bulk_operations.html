@@ -1,0 +1,499 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0 text-gradient">
+                        <i class="fas fa-layer-group me-2"></i>Bulk Operations
+                    </h1>
+                    <p class="text-muted">Perform operations on multiple items simultaneously</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary" onclick="selectAll()">
+                        <i class="fas fa-check-double me-2"></i>Select All
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="clearSelection()">
+                        <i class="fas fa-times me-2"></i>Clear Selection
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Operation Cards -->
+    <div class="row mb-4">
+        {% for operation in available_operations %}
+        <div class="col-md-6 col-lg-3 mb-3">
+            <div class="operation-card" onclick="selectOperation('{{ operation.id }}')">
+                <div class="operation-icon">
+                    <i class="{{ operation.icon }}"></i>
+                </div>
+                <div class="operation-content">
+                    <h5>{{ operation.name }}</h5>
+                    <p>Perform {{ operation.name|lower }} on selected items</p>
+                </div>
+                <div class="operation-badge">
+                    <span class="badge bg-primary">Available</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Bulk Operation Form -->
+    <div class="row">
+        <div class="col-12">
+            <div class="bulk-form-card">
+                <div class="form-header">
+                    <h5><i class="fas fa-cogs me-2"></i>Bulk Operation Configuration</h5>
+                </div>
+                <form method="post" id="bulkOperationForm">
+                    {% csrf_token %}
+                    <div class="form-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label for="operation_type" class="form-label">Operation Type</label>
+                                <select class="form-select" id="operation_type" name="operation_type" required>
+                                    <option value="">Select Operation</option>
+                                    {% for operation in available_operations %}
+                                    <option value="{{ operation.id }}">{{ operation.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="target_type" class="form-label">Target Type</label>
+                                <select class="form-select" id="target_type" name="target_type" required>
+                                    <option value="">Select Target</option>
+                                    <option value="students">Students</option>
+                                    <option value="teachers">Teachers</option>
+                                    <option value="classrooms">Classrooms</option>
+                                    <option value="sessions">Sessions</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="filter_criteria" class="form-label">Filter Criteria</label>
+                                <select class="form-select" id="filter_criteria" name="filter_criteria">
+                                    <option value="all">All Items</option>
+                                    <option value="active">Active Only</option>
+                                    <option value="inactive">Inactive Only</option>
+                                    <option value="recent">Recent Items</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Dynamic Options -->
+                        <div class="row mt-3" id="dynamicOptions" style="display: none;">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Additional options will appear based on your selection.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Item Selection -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h6><i class="fas fa-list me-2"></i>Item Selection</h6>
+                                <div class="selection-container">
+                                    <div class="selection-header">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="selectAllItems" onchange="toggleAllItems()">
+                                            <label class="form-check-label" for="selectAllItems">
+                                                Select All Items
+                                            </label>
+                                        </div>
+                                        <span class="selection-count">0 items selected</span>
+                                    </div>
+                                    <div class="selection-list" id="itemsList">
+                                        <!-- Items will be loaded dynamically -->
+                                        <div class="text-center py-4 text-muted">
+                                            <i class="fas fa-arrow-up me-2"></i>Select operation type and target to load items
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-footer">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="operation-summary">
+                                <span id="operationSummary" class="text-muted">No operation selected</span>
+                            </div>
+                            <div class="action-buttons">
+                                <button type="button" class="btn btn-outline-secondary me-2" onclick="previewOperation()">
+                                    <i class="fas fa-eye me-2"></i>Preview
+                                </button>
+                                <button type="submit" class="btn btn-primary" id="executeBtn" disabled>
+                                    <i class="fas fa-play me-2"></i>Execute Operation
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Modal -->
+    <div class="modal fade" id="progressModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-cogs me-2"></i>Processing Bulk Operation
+                    </h5>
+                </div>
+                <div class="modal-body">
+                    <div class="progress mb-3">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%" id="progressBar">
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <p id="progressText">Initializing operation...</p>
+                        <small class="text-muted" id="progressDetails">Please wait while we process your request.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Styles -->
+<style>
+.text-gradient {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.operation-card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    height: 100%;
+    position: relative;
+}
+
+.operation-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    border-color: #667eea;
+}
+
+.operation-card.selected {
+    border-color: #667eea;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+}
+
+.operation-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 15px;
+}
+
+.operation-content h5 {
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.operation-content p {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 0;
+}
+
+.operation-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+}
+
+.bulk-form-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+
+.form-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 20px 25px;
+}
+
+.form-header h5 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.form-body {
+    padding: 25px;
+}
+
+.selection-container {
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.selection-header {
+    background: #f8f9fa;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.selection-count {
+    font-weight: 600;
+    color: #667eea;
+}
+
+.selection-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.item-row {
+    padding: 12px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: background-color 0.2s ease;
+}
+
+.item-row:hover {
+    background-color: #f8f9fa;
+}
+
+.item-row:last-child {
+    border-bottom: none;
+}
+
+.form-footer {
+    background: #f8f9fa;
+    padding: 20px 25px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.operation-summary {
+    font-weight: 500;
+}
+
+.progress-bar-animated {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+}
+</style>
+
+<!-- Scripts -->
+<script>
+let selectedItems = [];
+let currentOperation = null;
+
+function selectOperation(operationId) {
+    // Remove previous selection
+    document.querySelectorAll('.operation-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    
+    // Add selection to clicked card
+    event.currentTarget.classList.add('selected');
+    
+    // Update form
+    document.getElementById('operation_type').value = operationId;
+    currentOperation = operationId;
+    
+    updateOperationSummary();
+    loadItems();
+}
+
+function loadItems() {
+    const targetType = document.getElementById('target_type').value;
+    const filterCriteria = document.getElementById('filter_criteria').value;
+    
+    if (!targetType) return;
+    
+    // Simulate loading items
+    const itemsList = document.getElementById('itemsList');
+    itemsList.innerHTML = '<div class="text-center py-3"><i class="fas fa-spinner fa-spin me-2"></i>Loading items...</div>';
+    
+    setTimeout(() => {
+        const sampleItems = generateSampleItems(targetType);
+        renderItems(sampleItems);
+    }, 1000);
+}
+
+function generateSampleItems(type) {
+    const items = [];
+    const count = Math.floor(Math.random() * 20) + 10;
+    
+    for (let i = 1; i <= count; i++) {
+        items.push({
+            id: i,
+            name: `${type.slice(0, -1)} ${i}`,
+            status: Math.random() > 0.3 ? 'active' : 'inactive',
+            lastActivity: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toLocaleDateString()
+        });
+    }
+    
+    return items;
+}
+
+function renderItems(items) {
+    const itemsList = document.getElementById('itemsList');
+    
+    if (items.length === 0) {
+        itemsList.innerHTML = '<div class="text-center py-4 text-muted">No items found</div>';
+        return;
+    }
+    
+    const itemsHtml = items.map(item => `
+        <div class="item-row">
+            <div class="form-check">
+                <input class="form-check-input item-checkbox" type="checkbox" 
+                       value="${item.id}" id="item_${item.id}" onchange="updateSelection()">
+            </div>
+            <div class="flex-grow-1">
+                <label class="form-check-label" for="item_${item.id}">
+                    <strong>${item.name}</strong>
+                    <br><small class="text-muted">Last activity: ${item.lastActivity}</small>
+                </label>
+            </div>
+            <div>
+                <span class="badge ${item.status === 'active' ? 'bg-success' : 'bg-secondary'}">${item.status}</span>
+            </div>
+        </div>
+    `).join('');
+    
+    itemsList.innerHTML = itemsHtml;
+}
+
+function updateSelection() {
+    const checkboxes = document.querySelectorAll('.item-checkbox:checked');
+    selectedItems = Array.from(checkboxes).map(cb => cb.value);
+    
+    document.querySelector('.selection-count').textContent = `${selectedItems.length} items selected`;
+    document.getElementById('executeBtn').disabled = selectedItems.length === 0 || !currentOperation;
+    
+    updateOperationSummary();
+}
+
+function toggleAllItems() {
+    const selectAll = document.getElementById('selectAllItems').checked;
+    const checkboxes = document.querySelectorAll('.item-checkbox');
+    
+    checkboxes.forEach(cb => {
+        cb.checked = selectAll;
+    });
+    
+    updateSelection();
+}
+
+function updateOperationSummary() {
+    const summary = document.getElementById('operationSummary');
+    
+    if (!currentOperation || selectedItems.length === 0) {
+        summary.textContent = 'No operation selected';
+        summary.className = 'text-muted';
+        return;
+    }
+    
+    const operationName = document.querySelector(`option[value="${currentOperation}"]`).textContent;
+    summary.textContent = `${operationName} will be performed on ${selectedItems.length} items`;
+    summary.className = 'text-primary fw-bold';
+}
+
+function previewOperation() {
+    if (!currentOperation || selectedItems.length === 0) {
+        alert('Please select an operation and items first.');
+        return;
+    }
+    
+    const operationName = document.querySelector(`option[value="${currentOperation}"]`).textContent;
+    const message = `Preview: ${operationName} will be performed on ${selectedItems.length} selected items.\n\nThis is a preview - no actual changes will be made.`;
+    alert(message);
+}
+
+function selectAll() {
+    document.getElementById('selectAllItems').checked = true;
+    toggleAllItems();
+}
+
+function clearSelection() {
+    document.getElementById('selectAllItems').checked = false;
+    toggleAllItems();
+}
+
+// Form submission
+document.getElementById('bulkOperationForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (selectedItems.length === 0) {
+        alert('Please select at least one item.');
+        return;
+    }
+    
+    // Show progress modal
+    const modal = new bootstrap.Modal(document.getElementById('progressModal'));
+    modal.show();
+    
+    // Simulate operation progress
+    simulateProgress();
+});
+
+function simulateProgress() {
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const progressDetails = document.getElementById('progressDetails');
+    
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += Math.random() * 15;
+        
+        if (progress >= 100) {
+            progress = 100;
+            clearInterval(interval);
+            
+            progressText.textContent = 'Operation completed successfully!';
+            progressDetails.textContent = `Processed ${selectedItems.length} items.`;
+            
+            setTimeout(() => {
+                bootstrap.Modal.getInstance(document.getElementById('progressModal')).hide();
+                location.reload();
+            }, 2000);
+        } else {
+            progressText.textContent = `Processing items... ${Math.floor(progress)}%`;
+            progressDetails.textContent = `Processing item ${Math.floor(progress / 100 * selectedItems.length) + 1} of ${selectedItems.length}`;
+        }
+        
+        progressBar.style.width = progress + '%';
+    }, 500);
+}
+
+// Event listeners
+document.getElementById('target_type').addEventListener('change', loadItems);
+document.getElementById('filter_criteria').addEventListener('change', loadItems);
+</script>
+{% endblock %}

@@ -1,0 +1,343 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign Up - Smart Classroom{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="signup-card">
+                <div class="card-header text-center">
+                    <h2 class="text-gradient">
+                        <i class="fas fa-user-plus me-2"></i>Create Account
+                    </h2>
+                    <p class="text-muted">Join our smart classroom system</p>
+                </div>
+                
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" class="signup-form">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                                    <i class="fas fa-user me-1"></i>First Name *
+                                </label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <div class="text-danger small">{{ form.first_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                                    <i class="fas fa-user me-1"></i>Last Name *
+                                </label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <div class="text-danger small">{{ form.last_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.username.id_for_label }}" class="form-label">
+                                <i class="fas fa-at me-1"></i>Username *
+                            </label>
+                            {{ form.username }}
+                            {% if form.username.errors %}
+                                <div class="text-danger small">{{ form.username.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">
+                                <i class="fas fa-envelope me-1"></i>Email Address *
+                            </label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="text-danger small">{{ form.email.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.role.id_for_label }}" class="form-label">
+                                <i class="fas fa-user-tag me-1"></i>Role *
+                            </label>
+                            {{ form.role }}
+                            {% if form.role.errors %}
+                                <div class="text-danger small">{{ form.role.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">
+                                <small>
+                                    <strong>Admin:</strong> Full system access<br>
+                                    <strong>Teacher:</strong> Manage classes and students<br>
+                                    <strong>Student:</strong> Access learning materials<br>
+                                    <strong>Parent:</strong> View child's progress
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.phone_number.id_for_label }}" class="form-label">
+                                    <i class="fas fa-phone me-1"></i>Phone Number
+                                </label>
+                                {{ form.phone_number }}
+                                {% if form.phone_number.errors %}
+                                    <div class="text-danger small">{{ form.phone_number.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.date_of_birth.id_for_label }}" class="form-label">
+                                    <i class="fas fa-calendar me-1"></i>Date of Birth
+                                </label>
+                                {{ form.date_of_birth }}
+                                {% if form.date_of_birth.errors %}
+                                    <div class="text-danger small">{{ form.date_of_birth.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.address.id_for_label }}" class="form-label">
+                                <i class="fas fa-map-marker-alt me-1"></i>Address
+                            </label>
+                            {{ form.address }}
+                            {% if form.address.errors %}
+                                <div class="text-danger small">{{ form.address.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-text">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-key me-2"></i>
+                                    <strong>Default Passwords:</strong> 
+                                    Select a role above to auto-fill with default passwords 
+                                    (admin123, student123, teacher123, parent123). You can customize these if needed.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.password1.id_for_label }}" class="form-label">
+                                    <i class="fas fa-lock me-1"></i>Password *
+                                </label>
+                                {{ form.password1 }}
+                                {% if form.password1.errors %}
+                                    <div class="text-danger small">{{ form.password1.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.password2.id_for_label }}" class="form-label">
+                                    <i class="fas fa-lock me-1"></i>Confirm Password *
+                                </label>
+                                {{ form.password2 }}
+                                {% if form.password2.errors %}
+                                    <div class="text-danger small">{{ form.password2.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-user-plus me-2"></i>Create Account
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="card-footer text-center">
+                    <p class="mb-0">
+                        Already have an account? 
+                        <a href="{% url 'login' %}" class="text-decoration-none">Sign In</a>
+                    </p>
+                    <p class="mb-0 mt-2">
+                        <small>
+                            <a href="{% url 'users:student_credential_login' %}" class="text-muted">
+                                <i class="fas fa-graduation-cap me-1"></i>Parent? Login with Student Credentials
+                            </a>
+                        </small>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.text-gradient {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.signup-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+    margin: 2rem 0;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 2rem;
+    border: none;
+}
+
+.card-header h2 {
+    color: white !important;
+    -webkit-text-fill-color: white !important;
+}
+
+.card-body {
+    padding: 2rem;
+}
+
+.card-footer {
+    background: rgba(102, 126, 234, 0.05);
+    border-top: 1px solid rgba(102, 126, 234, 0.1);
+    padding: 1.5rem;
+}
+
+.signup-form .form-control,
+.signup-form .form-select {
+    border-radius: 10px;
+    border: 2px solid #e9ecef;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.signup-form .form-control:focus,
+.signup-form .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.form-text small {
+    line-height: 1.4;
+}
+
+.password-hint {
+    background: rgba(102, 126, 234, 0.1);
+    border: 1px solid rgba(102, 126, 234, 0.2);
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.password-hint .hint-title {
+    font-weight: 600;
+    color: #667eea;
+    margin-bottom: 0.25rem;
+}
+</style>
+
+<script>
+function updateDefaultPassword(role) {
+    const password1Field = document.getElementById('{{ form.password1.id_for_label }}');
+    const password2Field = document.getElementById('{{ form.password2.id_for_label }}');
+    
+    let defaultPassword = '';
+    
+    switch(role) {
+        case 'admin':
+            defaultPassword = 'admin123';
+            break;
+        case 'student':
+            defaultPassword = 'student123';
+            break;
+        case 'teacher':
+            defaultPassword = 'teacher123';
+            break;
+        case 'parent':
+            defaultPassword = 'parent123';
+            break;
+        default:
+            defaultPassword = '';
+    }
+    
+    if (defaultPassword && (!password1Field.value || !password2Field.value)) {
+        password1Field.value = defaultPassword;
+        password2Field.value = defaultPassword;
+        
+        // Show a hint about the default password
+        showPasswordHint(role, defaultPassword);
+    }
+}
+
+function showPasswordHint(role, password) {
+    // Remove existing hint
+    const existingHint = document.querySelector('.password-hint');
+    if (existingHint) {
+        existingHint.remove();
+    }
+    
+    // Create new hint
+    const hint = document.createElement('div');
+    hint.className = 'password-hint';
+    hint.innerHTML = `
+        <div class="hint-title">
+            <i class="fas fa-info-circle me-1"></i>Default Password Set
+        </div>
+        <div>Default password for ${role}: <strong>${password}</strong></div>
+        <small class="text-muted">You can change this password if needed.</small>
+    `;
+    
+    // Insert after the confirm password field
+    const password2Container = document.getElementById('{{ form.password2.id_for_label }}').closest('.col-md-6');
+    password2Container.appendChild(hint);
+    
+    // Auto-remove hint after 5 seconds
+    setTimeout(() => {
+        if (hint.parentNode) {
+            hint.remove();
+        }
+    }, 5000);
+}
+
+// Auto-fill password when page loads if role is already selected
+document.addEventListener('DOMContentLoaded', function() {
+    const roleField = document.getElementById('{{ form.role.id_for_label }}');
+    if (roleField.value) {
+        updateDefaultPassword(roleField.value);
+    }
+});
+</script>
+{% endblock %}

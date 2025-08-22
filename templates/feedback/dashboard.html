@@ -1,0 +1,704 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0 text-gradient-feedback">
+                        <i class="fas fa-comments me-2"></i>Feedback Dashboard
+                    </h1>
+                    <p class="text-muted">Collect, analyze, and act on valuable feedback from your community</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'feedback:feedback_session_create' %}" class="btn btn-primary btn-glow">
+                        <i class="fas fa-plus me-2"></i>New Feedback
+                    </a>
+                    <a href="{% url 'feedback:feedback_analytics' %}" class="btn btn-outline-info btn-glow">
+                        <i class="fas fa-chart-pie me-2"></i>Analytics
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Statistics Grid -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="feedback-stat-card card-purple">
+                <div class="card-content">
+                    <div class="stat-icon-wrapper">
+                        <i class="fas fa-clipboard-list stat-icon"></i>
+                    </div>
+                    <div class="stat-details">
+                        <div class="stat-number counter" data-target="{{ total_sessions }}">0</div>
+                        <div class="stat-label">Total Sessions</div>
+                        <div class="stat-trend">
+                            <i class="fas fa-arrow-up text-success"></i>
+                            <span class="text-success">+12%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-wave"></div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="feedback-stat-card card-blue">
+                <div class="card-content">
+                    <div class="stat-icon-wrapper">
+                        <i class="fas fa-reply-all stat-icon"></i>
+                    </div>
+                    <div class="stat-details">
+                        <div class="stat-number counter" data-target="{{ total_responses }}">0</div>
+                        <div class="stat-label">Total Responses</div>
+                        <div class="stat-trend">
+                            <i class="fas fa-arrow-up text-success"></i>
+                            <span class="text-success">+8%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-wave"></div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="feedback-stat-card card-green">
+                <div class="card-content">
+                    <div class="stat-icon-wrapper">
+                        <i class="fas fa-broadcast-tower stat-icon"></i>
+                    </div>
+                    <div class="stat-details">
+                        <div class="stat-number counter" data-target="{{ active_sessions.count }}">0</div>
+                        <div class="stat-label">Active Sessions</div>
+                        <div class="stat-trend">
+                            <i class="fas fa-minus text-warning"></i>
+                            <span class="text-warning">Stable</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-wave"></div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="feedback-stat-card card-orange">
+                <div class="card-content">
+                    <div class="stat-icon-wrapper">
+                        <i class="fas fa-bell stat-icon"></i>
+                    </div>
+                    <div class="stat-details">
+                        <div class="stat-number counter" data-target="{{ notifications.count }}">0</div>
+                        <div class="stat-label">Notifications</div>
+                        <div class="stat-trend">
+                            <i class="fas fa-arrow-down text-danger"></i>
+                            <span class="text-danger">-3%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-wave"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="row">
+        <!-- Active Sessions with Modern Design -->
+        <div class="col-lg-8 mb-4">
+            <div class="glass-card">
+                <div class="card-header-modern">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 text-white">
+                            <i class="fas fa-rocket me-2"></i>Active Feedback Sessions
+                            <span class="badge bg-light text-primary ms-2">{{ active_sessions.count }}</span>
+                        </h5>
+                        <div class="header-actions">
+                            <button class="btn btn-sm btn-outline-light" onclick="refreshSessions()">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if active_sessions %}
+                        <div class="sessions-grid">
+                            {% for session in active_sessions %}
+                            <div class="session-card" data-session-id="{{ session.id }}">
+                                <div class="session-header">
+                                    <div class="session-status active-pulse"></div>
+                                    <div class="session-category" style="background: {{ session.category.color }}">
+                                        <i class="{{ session.category.icon }}"></i>
+                                    </div>
+                                </div>
+                                <div class="session-content">
+                                    <h6 class="session-title">{{ session.title }}</h6>
+                                    <p class="session-description">{{ session.description|truncatechars:60 }}</p>
+                                    <div class="session-meta">
+                                        <span class="meta-item">
+                                            <i class="fas fa-users"></i>
+                                            {{ session.target_count }} targets
+                                        </span>
+                                        <span class="meta-item">
+                                            <i class="fas fa-chart-line"></i>
+                                            {{ session.completion_rate }}% complete
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="session-progress">
+                                    <div class="progress-ring">
+                                        <svg class="progress-ring-svg" width="60" height="60">
+                                            <circle class="progress-ring-circle-bg" cx="30" cy="30" r="25"></circle>
+                                            <circle class="progress-ring-circle" cx="30" cy="30" r="25" 
+                                                    style="stroke-dasharray: {{ session.completion_rate|floatformat:0 }}, 100"></circle>
+                                        </svg>
+                                        <div class="progress-text">{{ session.completion_rate|floatformat:0 }}%</div>
+                                    </div>
+                                </div>
+                                <div class="session-actions">
+                                    <a href="{% url 'feedback:feedback_session_detail' session.id %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="shareSession({{ session.id }})">
+                                        <i class="fas fa-share"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <div class="empty-icon">
+                                <i class="fas fa-comment-slash"></i>
+                            </div>
+                            <h5>No Active Sessions</h5>
+                            <p>Create your first feedback session to start collecting valuable insights</p>
+                            <a href="{% url 'feedback:feedback_session_create' %}" class="btn btn-primary btn-glow">
+                                <i class="fas fa-plus me-2"></i>Create Session
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar with Quick Actions and Insights -->
+        <div class="col-lg-4">
+            <!-- Pending Responses -->
+            <div class="glass-card mb-4">
+                <div class="card-header-modern">
+                    <h6 class="mb-0 text-white">
+                        <i class="fas fa-hourglass-half me-2"></i>Pending Responses
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if pending_responses %}
+                        <div class="pending-list">
+                            {% for session in pending_responses %}
+                            <div class="pending-item">
+                                <div class="pending-info">
+                                    <h6 class="mb-1">{{ session.title }}</h6>
+                                    <small class="text-muted">{{ session.created_by.get_full_name }}</small>
+                                </div>
+                                <div class="pending-actions">
+                                    <a href="{% url 'feedback:feedback_respond' session.id %}" class="btn btn-sm btn-success">
+                                        <i class="fas fa-reply"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                            <p class="text-muted mb-0">All caught up!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Templates -->
+            <div class="glass-card mb-4">
+                <div class="card-header-modern">
+                    <h6 class="mb-0 text-white">
+                        <i class="fas fa-magic me-2"></i>Quick Templates
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="template-grid">
+                        <div class="template-item" onclick="createFromTemplate('student_feedback')">
+                            <i class="fas fa-user-graduate"></i>
+                            <span>Student Feedback</span>
+                        </div>
+                        <div class="template-item" onclick="createFromTemplate('course_evaluation')">
+                            <i class="fas fa-book"></i>
+                            <span>Course Evaluation</span>
+                        </div>
+                        <div class="template-item" onclick="createFromTemplate('peer_review')">
+                            <i class="fas fa-users"></i>
+                            <span>Peer Review</span>
+                        </div>
+                        <div class="template-item" onclick="createFromTemplate('self_assessment')">
+                            <i class="fas fa-mirror"></i>
+                            <span>Self Assessment</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Notifications -->
+            <div class="glass-card">
+                <div class="card-header-modern">
+                    <h6 class="mb-0 text-white">
+                        <i class="fas fa-bell me-2"></i>Recent Notifications
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if notifications %}
+                        <div class="notification-list">
+                            {% for notification in notifications %}
+                            <div class="notification-item {% if not notification.is_read %}unread{% endif %}">
+                                <div class="notification-icon">
+                                    <i class="fas fa-{{ notification.notification_type|default:'info' }}"></i>
+                                </div>
+                                <div class="notification-content">
+                                    <h6 class="mb-1">{{ notification.title }}</h6>
+                                    <p class="mb-1">{{ notification.message|truncatechars:50 }}</p>
+                                    <small class="text-muted">{{ notification.created_at|timesince }} ago</small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="text-center mt-3">
+                            <a href="{% url 'feedback:feedback_notifications' %}" class="btn btn-sm btn-outline-primary">
+                                View All
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-bell-slash fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-0">No notifications</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Advanced Styles -->
+<style>
+.text-gradient-feedback {
+    background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #f5576c);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradientShift 4s ease infinite;
+}
+
+@keyframes gradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+.feedback-stat-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 25px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.feedback-stat-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+.card-purple { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+.card-blue { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+.card-green { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+.card-orange { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+
+.card-content {
+    position: relative;
+    z-index: 2;
+    color: white;
+}
+
+.stat-icon-wrapper {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.stat-icon {
+    font-size: 28px;
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    line-height: 1;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 1rem;
+    opacity: 0.9;
+    margin-bottom: 10px;
+}
+
+.stat-trend {
+    font-size: 0.9rem;
+}
+
+.card-wave {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background: rgba(255,255,255,0.1);
+    clip-path: polygon(0 20px, 100% 0, 100% 100%, 0 100%);
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.card-header-modern {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+    border: none;
+}
+
+.sessions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.session-card {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.session-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+
+.session-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.active-pulse {
+    width: 12px;
+    height: 12px;
+    background: #28a745;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.session-category {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 16px;
+}
+
+.session-title {
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.session-description {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+}
+
+.session-meta {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.meta-item {
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.meta-item i {
+    margin-right: 5px;
+}
+
+.session-progress {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+
+.progress-ring-svg {
+    transform: rotate(-90deg);
+}
+
+.progress-ring-circle-bg {
+    fill: none;
+    stroke: #e9ecef;
+    stroke-width: 3;
+}
+
+.progress-ring-circle {
+    fill: none;
+    stroke: #28a745;
+    stroke-width: 3;
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.5s ease;
+}
+
+.progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.session-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #dee2e6;
+    margin-bottom: 20px;
+}
+
+.btn-glow {
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s ease;
+}
+
+.btn-glow:hover {
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    transform: translateY(-2px);
+}
+
+.pending-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.pending-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.pending-item:last-child {
+    border-bottom: none;
+}
+
+.template-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.template-item {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.template-item:hover {
+    background: #e9ecef;
+    transform: translateY(-2px);
+}
+
+.template-item i {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+    color: #667eea;
+}
+
+.template-item span {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.notification-list {
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    display: flex;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+    transition: all 0.3s ease;
+}
+
+.notification-item.unread {
+    background: rgba(102, 126, 234, 0.05);
+    border-left: 3px solid #667eea;
+    padding-left: 12px;
+}
+
+.notification-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    color: #667eea;
+}
+
+.notification-content h6 {
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+}
+
+.notification-content p {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+/* Counter Animation */
+.counter {
+    transition: all 0.5s ease;
+}
+</style>
+
+<!-- Advanced JavaScript -->
+<script>
+// Counter Animation
+function animateCounters() {
+    const counters = document.querySelectorAll('.counter');
+    counters.forEach(counter => {
+        const target = parseInt(counter.getAttribute('data-target'));
+        const increment = target / 100;
+        let current = 0;
+        
+        const updateCounter = () => {
+            if (current < target) {
+                current += increment;
+                counter.textContent = Math.ceil(current);
+                setTimeout(updateCounter, 20);
+            } else {
+                counter.textContent = target;
+            }
+        };
+        
+        updateCounter();
+    });
+}
+
+// Template Creation
+function createFromTemplate(templateType) {
+    window.location.href = `/feedback/sessions/create/?template=${templateType}`;
+}
+
+// Session Sharing
+function shareSession(sessionId) {
+    const url = `${window.location.origin}/feedback/sessions/${sessionId}/`;
+    navigator.clipboard.writeText(url).then(() => {
+        showToast('Session link copied to clipboard!', 'success');
+    });
+}
+
+// Refresh Sessions
+function refreshSessions() {
+    location.reload();
+}
+
+// Toast Notification
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 5000);
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    animateCounters();
+    
+    // Add stagger animation to cards
+    const cards = document.querySelectorAll('.feedback-stat-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        setTimeout(() => {
+            card.style.transition = 'all 0.6s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 150);
+    });
+});
+
+// Real-time updates (WebSocket simulation)
+setInterval(() => {
+    // Update notification badges
+    const badges = document.querySelectorAll('.nav-badge');
+    // This would be replaced with actual WebSocket data
+}, 30000);
+</script>
+{% endblock %}

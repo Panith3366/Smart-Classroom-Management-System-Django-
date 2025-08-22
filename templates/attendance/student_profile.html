@@ -1,0 +1,528 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0 text-gradient">
+                        <i class="fas fa-user-check me-2"></i>{{ student.get_full_name }}'s Attendance
+                    </h1>
+                    <p class="text-muted">Detailed attendance record and statistics</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'attendance:attendance_list' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to List
+                    </a>
+                    <button class="btn btn-primary" onclick="exportStudentAttendance()">
+                        <i class="fas fa-download me-2"></i>Export Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Info & Stats -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="student-profile-card">
+                <div class="student-header">
+                    <div class="student-avatar">
+                        {% if student.profile_picture %}
+                            <img src="{{ student.profile_picture.url }}" alt="Profile">
+                        {% else %}
+                            <div class="avatar-placeholder">
+                                {{ student.first_name.0 }}{{ student.last_name.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="student-info">
+                        <h4>{{ student.get_full_name }}</h4>
+                        {% if student.student_profile %}
+                            <p class="student-id">ID: {{ student.student_profile.student_id }}</p>
+                            {% if student.student_profile.classroom %}
+                                <span class="classroom-badge">{{ student.student_profile.classroom.name }}</span>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="stat-card stat-primary">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>{{ total_sessions }}</h3>
+                            <p>Total Sessions</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card stat-success">
+                        <div class="stat-icon">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>{{ present_count }}</h3>
+                            <p>Present</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card stat-warning">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>{{ late_count }}</h3>
+                            <p>Late</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card stat-danger">
+                        <div class="stat-icon">
+                            <i class="fas fa-times"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>{{ absent_count }}</h3>
+                            <p>Absent</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Attendance Percentage -->
+            <div class="attendance-overview mt-3">
+                <div class="attendance-percentage">
+                    <div class="percentage-circle" data-percentage="{{ attendance_percentage }}">
+                        <span class="percentage-text">{{ attendance_percentage }}%</span>
+                    </div>
+                    <div class="percentage-info">
+                        <h5>Overall Attendance</h5>
+                        <p class="text-muted">Based on {{ total_sessions }} sessions</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Records -->
+    <div class="row">
+        <div class="col-12">
+            <div class="attendance-records-card">
+                <div class="card-header">
+                    <h5><i class="fas fa-list me-2"></i>Attendance Records</h5>
+                </div>
+                <div class="card-body">
+                    {% if page_obj %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-header">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Session</th>
+                                        <th>Subject</th>
+                                        <th>Status</th>
+                                        <th>Marked At</th>
+                                        <th>Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for record in page_obj %}
+                                    <tr>
+                                        <td>{{ record.session.start_time|date:"M d, Y" }}</td>
+                                        <td>
+                                            <div class="session-info">
+                                                <h6 class="mb-0">{{ record.session.title }}</h6>
+                                                <small class="text-muted">{{ record.session.classroom.name }}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if record.session.subject %}
+                                                <span class="subject-badge">{{ record.session.subject.name }}</span>
+                                            {% else %}
+                                                <span class="text-muted">General</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="status-badge status-{{ record.status }}">
+                                                {% if record.status == 'present' %}
+                                                    <i class="fas fa-check"></i> Present
+                                                {% elif record.status == 'late' %}
+                                                    <i class="fas fa-clock"></i> Late
+                                                {% elif record.status == 'absent' %}
+                                                    <i class="fas fa-times"></i> Absent
+                                                {% else %}
+                                                    <i class="fas fa-question"></i> {{ record.get_status_display }}
+                                                {% endif %}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if record.marked_at %}
+                                                {{ record.marked_at|date:"H:i" }}
+                                            {% else %}
+                                                <span class="text-muted">Not marked</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if record.notes %}
+                                                <span class="notes-text">{{ record.notes|truncatechars:50 }}</span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        {% if page_obj.has_other_pages %}
+                        <div class="pagination-container">
+                            <nav aria-label="Attendance records pagination">
+                                <ul class="pagination justify-content-center">
+                                    {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                    
+                                    {% for num in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                    </li>
+                                    {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                        {% endif %}
+
+                    {% else %}
+                        <div class="empty-state">
+                            <div class="empty-icon">
+                                <i class="fas fa-calendar-times"></i>
+                            </div>
+                            <h4>No Attendance Records</h4>
+                            <p class="text-muted">No attendance records found for this student.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Styles -->
+<style>
+.text-gradient {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.student-profile-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.student-header {
+    padding: 2rem;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    text-align: center;
+}
+
+.student-avatar {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1rem;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.student-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+.student-info h4 {
+    margin-bottom: 0.5rem;
+    color: #495057;
+}
+
+.student-id {
+    font-family: monospace;
+    background: rgba(102, 126, 234, 0.2);
+    padding: 0.3rem 0.6rem;
+    border-radius: 8px;
+    display: inline-block;
+    margin-bottom: 0.5rem;
+    color: #667eea;
+    font-weight: 600;
+}
+
+.classroom-badge {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+    padding: 0.4rem 0.8rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: white;
+}
+
+.stat-primary .stat-icon { background: linear-gradient(135deg, #667eea, #764ba2); }
+.stat-success .stat-icon { background: linear-gradient(135deg, #28a745, #20c997); }
+.stat-warning .stat-icon { background: linear-gradient(135deg, #ffc107, #fd7e14); }
+.stat-danger .stat-icon { background: linear-gradient(135deg, #dc3545, #e83e8c); }
+
+.stat-content h3 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 0;
+    color: #495057;
+}
+
+.stat-content p {
+    margin: 0;
+    color: #6c757d;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.attendance-overview {
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.attendance-percentage {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.percentage-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: conic-gradient(#28a745 0deg, #28a745 calc(var(--percentage, 0) * 3.6deg), #e9ecef calc(var(--percentage, 0) * 3.6deg), #e9ecef 360deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.percentage-circle::before {
+    content: '';
+    width: 60px;
+    height: 60px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+}
+
+.percentage-text {
+    font-weight: bold;
+    font-size: 1rem;
+    color: #495057;
+    z-index: 1;
+}
+
+.percentage-info h5 {
+    margin-bottom: 0.5rem;
+    color: #495057;
+}
+
+.attendance-records-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 1.5rem;
+}
+
+.card-body {
+    padding: 2rem;
+}
+
+.table-header {
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.table-header th {
+    border: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    padding: 15px;
+    color: #495057;
+}
+
+.session-info h6 {
+    color: #495057;
+    font-weight: 600;
+}
+
+.subject-badge {
+    background: rgba(23, 162, 184, 0.2);
+    color: #17a2b8;
+    padding: 0.3rem 0.6rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.status-badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.status-present {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+}
+
+.status-late {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+}
+
+.status-absent {
+    background: rgba(220, 53, 69, 0.2);
+    color: #dc3545;
+}
+
+.notes-text {
+    font-style: italic;
+    color: #6c757d;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #dee2e6;
+    margin-bottom: 1rem;
+}
+
+.empty-state h4 {
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.pagination-container {
+    margin-top: 2rem;
+}
+
+.page-link {
+    color: #667eea;
+    border-color: #dee2e6;
+}
+
+.page-link:hover {
+    color: #764ba2;
+    background-color: rgba(102, 126, 234, 0.1);
+    border-color: #667eea;
+}
+
+.page-item.active .page-link {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+</style>
+
+<script>
+function exportStudentAttendance() {
+    alert('Export functionality will be implemented soon!');
+}
+
+// Set percentage for circle
+document.addEventListener('DOMContentLoaded', function() {
+    const circle = document.querySelector('.percentage-circle');
+    if (circle) {
+        const percentage = circle.getAttribute('data-percentage');
+        circle.style.setProperty('--percentage', percentage);
+    }
+});
+</script>
+{% endblock %}

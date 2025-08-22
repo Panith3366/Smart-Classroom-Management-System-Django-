@@ -1,0 +1,680 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0 text-gradient-feedback">
+                        <i class="fas fa-comments me-2"></i>Feedback Center
+                    </h1>
+                    <p class="text-muted">Submit feedback and view your response history</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'feedback:feedback_dashboard' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                    </a>
+                    <a href="{% url 'feedback:feedback_session_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Create Feedback
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="filter-panel">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="category" class="form-label">Category</label>
+                        <select class="form-select" id="category" name="category">
+                            <option value="">All Categories</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}" {% if current_filters.category == category.id|stringformat:"s" %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="status" class="form-label">Response Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">All Responses</option>
+                            <option value="completed" {% if current_filters.status == 'completed' %}selected{% endif %}>Completed</option>
+                            <option value="draft" {% if current_filters.status == 'draft' %}selected{% endif %}>Draft</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="fas fa-filter me-2"></i>Apply
+                        </button>
+                        <a href="{% url 'feedback:feedback_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Clear
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Tabs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="feedback-tabs">
+                <ul class="nav nav-pills nav-fill mb-4" id="feedbackTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="available-tab" data-bs-toggle="pill" 
+                                data-bs-target="#available" type="button" role="tab">
+                            <i class="fas fa-clipboard-list me-2"></i>
+                            Available Feedback ({{ available_sessions.paginator.count }})
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="submitted-tab" data-bs-toggle="pill" 
+                                data-bs-target="#submitted" type="button" role="tab">
+                            <i class="fas fa-check-circle me-2"></i>
+                            My Responses ({{ submitted_responses.paginator.count }})
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="feedbackTabsContent">
+                    <!-- Available Feedback Tab -->
+                    <div class="tab-pane fade show active" id="available" role="tabpanel">
+                        {% if available_sessions %}
+                            <div class="feedback-grid">
+                                {% for session in available_sessions %}
+                                <div class="feedback-card available-card" data-session-id="{{ session.id }}">
+                                    <div class="card-header" style="background: {{ session.category.color }}">
+                                        <div class="header-content">
+                                            <div class="category-badge">
+                                                <i class="{{ session.category.icon }}"></i>
+                                                <span>{{ session.category.name }}</span>
+                                            </div>
+                                            <div class="urgency-indicator">
+                                                {% if session.end_date %}
+                                                    {% now "Y-m-d H:i:s" as current_time %}
+                                                    {% if session.end_date|date:"Y-m-d H:i:s" < current_time %}
+                                                        <span class="badge bg-danger">Expired</span>
+                                                    {% else %}
+                                                        <span class="badge bg-warning">Due Soon</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="badge bg-success">Active</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card-body">
+                                        <h5 class="session-title">{{ session.title }}</h5>
+                                        <p class="session-description">{{ session.description|truncatechars:120 }}</p>
+                                        
+                                        <div class="session-meta">
+                                            {% if session.classroom %}
+                                            <div class="meta-item">
+                                                <i class="fas fa-school"></i>
+                                                <span>{{ session.classroom.name }}</span>
+                                            </div>
+                                            {% endif %}
+                                            {% if session.subject %}
+                                            <div class="meta-item">
+                                                <i class="fas fa-book"></i>
+                                                <span>{{ session.subject.name }}</span>
+                                            </div>
+                                            {% endif %}
+                                            <div class="meta-item">
+                                                <i class="fas fa-calendar"></i>
+                                                <span>{{ session.start_date|date:"M d, Y" }}</span>
+                                            </div>
+                                            {% if session.end_date %}
+                                            <div class="meta-item">
+                                                <i class="fas fa-clock"></i>
+                                                <span>Due: {{ session.end_date|date:"M d, H:i" }}</span>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="question-preview">
+                                            <small class="text-muted">
+                                                <i class="fas fa-question-circle me-1"></i>
+                                                {% if session.template %}
+                                                    Template: {{ session.template.name }}
+                                                {% else %}
+                                                    Custom feedback form
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card-footer">
+                                        <div class="footer-actions">
+                                            <a href="{% url 'feedback:feedback_respond' session.id %}" 
+                                               class="btn btn-primary btn-sm">
+                                                <i class="fas fa-edit me-2"></i>Start Feedback
+                                            </a>
+                                            <button class="btn btn-outline-info btn-sm" 
+                                                    onclick="previewSession({{ session.id }})">
+                                                <i class="fas fa-eye me-2"></i>Preview
+                                            </button>
+                                        </div>
+                                        <div class="footer-info">
+                                            <small class="text-muted">
+                                                {% if session.allow_anonymous %}
+                                                    <i class="fas fa-user-secret me-1"></i>Anonymous
+                                                {% else %}
+                                                    <i class="fas fa-user me-1"></i>Identified
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <!-- Pagination for Available Sessions -->
+                            {% if available_sessions.has_other_pages %}
+                            <div class="pagination-container">
+                                <nav aria-label="Available sessions pagination">
+                                    <ul class="pagination justify-content-center">
+                                        {% if available_sessions.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?sessions_page={{ available_sessions.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'sessions_page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                                <i class="fas fa-chevron-left"></i>
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                        
+                                        {% for num in available_sessions.paginator.page_range %}
+                                        {% if available_sessions.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                        {% elif num > available_sessions.number|add:'-3' and num < available_sessions.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?sessions_page={{ num }}{% for key, value in request.GET.items %}{% if key != 'sessions_page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                                        </li>
+                                        {% endif %}
+                                        {% endfor %}
+                                        
+                                        {% if available_sessions.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?sessions_page={{ available_sessions.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'sessions_page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                                <i class="fas fa-chevron-right"></i>
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </nav>
+                            </div>
+                            {% endif %}
+                            
+                        {% else %}
+                            <div class="empty-state">
+                                <div class="empty-icon">
+                                    <i class="fas fa-clipboard-list"></i>
+                                </div>
+                                <h4>No Available Feedback</h4>
+                                <p class="text-muted">There are no feedback sessions available for you at the moment.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Submitted Responses Tab -->
+                    <div class="tab-pane fade" id="submitted" role="tabpanel">
+                        {% if submitted_responses %}
+                            <div class="responses-list">
+                                {% for response in submitted_responses %}
+                                <div class="response-card" data-response-id="{{ response.id }}">
+                                    <div class="response-header">
+                                        <div class="response-info">
+                                            <h6 class="response-title">{{ response.session.title }}</h6>
+                                            <div class="response-meta">
+                                                <span class="category-badge" style="background: {{ response.session.category.color }}">
+                                                    <i class="{{ response.session.category.icon }}"></i>
+                                                    {{ response.session.category.name }}
+                                                </span>
+                                                <span class="submission-date">
+                                                    <i class="fas fa-calendar me-1"></i>
+                                                    {{ response.submitted_at|date:"M d, Y H:i" }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="response-status">
+                                            {% if response.is_complete %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check me-1"></i>Completed
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-warning">
+                                                    <i class="fas fa-clock me-1"></i>Draft
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="response-body">
+                                        <div class="response-summary">
+                                            <div class="summary-item">
+                                                <i class="fas fa-question-circle"></i>
+                                                <span>{{ response.responses|length }} responses</span>
+                                            </div>
+                                            <div class="summary-item">
+                                                <i class="fas fa-clock"></i>
+                                                <span>{{ response.time_taken }} minutes</span>
+                                            </div>
+                                            {% if response.session.allow_multiple_responses %}
+                                            <div class="summary-item">
+                                                <i class="fas fa-redo"></i>
+                                                <span>Can resubmit</span>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="response-footer">
+                                        <div class="footer-actions">
+                                            <button class="btn btn-outline-primary btn-sm" 
+                                                    onclick="viewResponse({{ response.id }})">
+                                                <i class="fas fa-eye me-2"></i>View Response
+                                            </button>
+                                            {% if not response.is_complete %}
+                                            <a href="{% url 'feedback:feedback_respond' response.session.id %}?response_id={{ response.id }}" 
+                                               class="btn btn-warning btn-sm">
+                                                <i class="fas fa-edit me-2"></i>Continue
+                                            </a>
+                                            {% endif %}
+                                            {% if response.session.allow_multiple_responses and response.is_complete %}
+                                            <a href="{% url 'feedback:feedback_respond' response.session.id %}" 
+                                               class="btn btn-success btn-sm">
+                                                <i class="fas fa-plus me-2"></i>Submit Again
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <!-- Pagination for Submitted Responses -->
+                            {% if submitted_responses.has_other_pages %}
+                            <div class="pagination-container">
+                                <nav aria-label="Submitted responses pagination">
+                                    <ul class="pagination justify-content-center">
+                                        {% if submitted_responses.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?responses_page={{ submitted_responses.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'responses_page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                                <i class="fas fa-chevron-left"></i>
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                        
+                                        {% for num in submitted_responses.paginator.page_range %}
+                                        {% if submitted_responses.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                        {% elif num > submitted_responses.number|add:'-3' and num < submitted_responses.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?responses_page={{ num }}{% for key, value in request.GET.items %}{% if key != 'responses_page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                                        </li>
+                                        {% endif %}
+                                        {% endfor %}
+                                        
+                                        {% if submitted_responses.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?responses_page={{ submitted_responses.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'responses_page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                                <i class="fas fa-chevron-right"></i>
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </nav>
+                            </div>
+                            {% endif %}
+                            
+                        {% else %}
+                            <div class="empty-state">
+                                <div class="empty-icon">
+                                    <i class="fas fa-inbox"></i>
+                                </div>
+                                <h4>No Submitted Responses</h4>
+                                <p class="text-muted">You haven't submitted any feedback responses yet.</p>
+                                <button class="btn btn-primary" onclick="document.getElementById('available-tab').click()">
+                                    <i class="fas fa-search me-2"></i>Find Available Feedback
+                                </button>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Styles -->
+<style>
+.text-gradient-feedback {
+    background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #f5576c);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradientShift 4s ease infinite;
+}
+
+@keyframes gradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+.filter-panel {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.feedback-tabs .nav-pills .nav-link {
+    border-radius: 25px;
+    padding: 12px 25px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.feedback-tabs .nav-pills .nav-link.active {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-color: #667eea;
+    color: white;
+}
+
+.feedback-tabs .nav-pills .nav-link:not(.active) {
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.feedback-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 25px;
+}
+
+.feedback-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    overflow: hidden;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.feedback-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+}
+
+.feedback-card .card-header {
+    padding: 20px;
+    color: white;
+    position: relative;
+}
+
+.feedback-card .card-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+}
+
+.header-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.category-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+}
+
+.urgency-indicator .badge {
+    font-size: 0.75rem;
+}
+
+.feedback-card .card-body {
+    padding: 25px;
+}
+
+.session-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.session-description {
+    color: #666;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+.session-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.meta-item i {
+    width: 14px;
+    color: #667eea;
+}
+
+.question-preview {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+}
+
+.feedback-card .card-footer {
+    background: #f8f9fa;
+    padding: 15px 25px;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.footer-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.responses-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.response-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    overflow: hidden;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.response-card:hover {
+    transform: translateX(5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+}
+
+.response-header {
+    padding: 20px 25px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.response-title {
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.response-meta {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.response-meta .category-badge {
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.submission-date {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.response-body {
+    padding: 20px 25px;
+}
+
+.response-summary {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.summary-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.summary-item i {
+    color: #667eea;
+}
+
+.response-footer {
+    padding: 15px 25px;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #dee2e6;
+    margin-bottom: 20px;
+}
+
+.pagination-container {
+    margin-top: 30px;
+}
+
+.pagination .page-link {
+    border-radius: 8px;
+    margin: 0 2px;
+    border: 1px solid #dee2e6;
+    color: #667eea;
+    transition: all 0.3s ease;
+}
+
+.pagination .page-link:hover {
+    background: #667eea;
+    border-color: #667eea;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.pagination .page-item.active .page-link {
+    background: #667eea;
+    border-color: #667eea;
+}
+</style>
+
+<!-- JavaScript -->
+<script>
+function previewSession(sessionId) {
+    // Open session preview in modal or new window
+    window.open(`/feedback/sessions/${sessionId}/`, '_blank', 'width=800,height=600');
+}
+
+function viewResponse(responseId) {
+    // Open response details in modal or new window
+    window.open(`/feedback/responses/${responseId}/`, '_blank', 'width=800,height=600');
+}
+
+// Initialize tab persistence
+document.addEventListener('DOMContentLoaded', function() {
+    // Remember active tab
+    const activeTab = localStorage.getItem('feedbackActiveTab');
+    if (activeTab) {
+        const tabButton = document.querySelector(`[data-bs-target="${activeTab}"]`);
+        if (tabButton) {
+            tabButton.click();
+        }
+    }
+    
+    // Save active tab on change
+    document.querySelectorAll('[data-bs-toggle="pill"]').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function(e) {
+            localStorage.setItem('feedbackActiveTab', e.target.getAttribute('data-bs-target'));
+        });
+    });
+    
+    // Auto-submit form on filter change
+    const filterSelects = document.querySelectorAll('.filter-panel select');
+    filterSelects.forEach(select => {
+        select.addEventListener('change', () => {
+            select.closest('form').submit();
+        });
+    });
+});
+</script>
+{% endblock %}

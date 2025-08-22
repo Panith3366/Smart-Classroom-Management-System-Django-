@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Subject Teachers Management</h1>
+        <a href="{% url 'subject_teacher_add' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add New Assignment
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">All Subject-Teacher Assignments</h6>
+        </div>
+        <div class="card-body">
+            {% if subject_teachers %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>#</th>
+                                <th>Subject</th>
+                                <th>Teacher</th>
+                                <th>Classroom</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for st in subject_teachers %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ st.subject.name }}</td>
+                                <td>{{ st.teacher.first_name }} {{ st.teacher.last_name }} ({{ st.teacher.username }})</td>
+                                <td>{{ st.classroom.name }} - Grade {{ st.classroom.grade }}</td>
+                                <td>
+                                    <a href="{% url 'subject_teacher_edit' st.id %}" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                    <a href="{% url 'subject_teacher_delete' st.id %}" 
+                                       class="btn btn-sm btn-danger"
+                                       onclick="return confirm('Are you sure you want to delete this assignment?')">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-user-tie fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No subject-teacher assignments found</h5>
+                    <p class="text-muted">Start by assigning teachers to subjects.</p>
+                    <a href="{% url 'subject_teacher_add' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Assignment
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}

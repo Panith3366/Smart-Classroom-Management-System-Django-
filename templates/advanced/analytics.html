@@ -1,0 +1,586 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0 text-gradient">
+                        <i class="fas fa-chart-line me-2"></i>Advanced Analytics
+                    </h1>
+                    <p class="text-muted">Comprehensive insights and data visualization</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary" onclick="refreshData()">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh
+                    </button>
+                    <button class="btn btn-primary" onclick="exportReport()">
+                        <i class="fas fa-download me-2"></i>Export Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-icon bg-primary">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stats-content">
+                    <h3>{{ total_students }}</h3>
+                    <p>Total Students</p>
+                    <small class="text-success"><i class="fas fa-arrow-up"></i> +5% this month</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-icon bg-success">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <div class="stats-content">
+                    <h3>{{ total_teachers }}</h3>
+                    <p>Active Teachers</p>
+                    <small class="text-success"><i class="fas fa-arrow-up"></i> +2% this month</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-icon bg-warning">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="stats-content">
+                    <h3>{{ total_sessions }}</h3>
+                    <p>Active Sessions</p>
+                    <small class="text-info"><i class="fas fa-clock"></i> Today</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-icon bg-info">
+                    <i class="fas fa-percentage"></i>
+                </div>
+                <div class="stats-content">
+                    <h3>{{ attendance_rate }}%</h3>
+                    <p>Attendance Rate</p>
+                    <small class="text-success"><i class="fas fa-arrow-up"></i> +3% this week</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h5><i class="fas fa-chart-area me-2"></i>Attendance Trends</h5>
+                    <div class="chart-controls">
+                        <select class="form-select form-select-sm" onchange="updateChart(this.value)">
+                            <option value="week">This Week</option>
+                            <option value="month">This Month</option>
+                            <option value="year">This Year</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="chart-body">
+                    <canvas id="attendanceChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h5><i class="fas fa-chart-pie me-2"></i>Class Performance</h5>
+                </div>
+                <div class="chart-body">
+                    <canvas id="performanceChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Analytics Tools -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="analytics-tools-card">
+                <div class="tools-header">
+                    <h5><i class="fas fa-tools me-2"></i>Advanced Analytics Tools</h5>
+                </div>
+                <div class="tools-grid">
+                    <div class="tool-item" onclick="openPredictiveAnalytics()">
+                        <div class="tool-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div class="tool-content">
+                            <h6>Predictive Analytics</h6>
+                            <p>AI-powered attendance predictions</p>
+                        </div>
+                    </div>
+                    <div class="tool-item" onclick="openTrendAnalysis()">
+                        <div class="tool-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="tool-content">
+                            <h6>Trend Analysis</h6>
+                            <p>Identify patterns and trends</p>
+                        </div>
+                    </div>
+                    <div class="tool-item" onclick="openComparativeAnalysis()">
+                        <div class="tool-icon">
+                            <i class="fas fa-balance-scale"></i>
+                        </div>
+                        <div class="tool-content">
+                            <h6>Comparative Analysis</h6>
+                            <p>Compare classes and periods</p>
+                        </div>
+                    </div>
+                    <div class="tool-item" onclick="openCustomReports()">
+                        <div class="tool-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="tool-content">
+                            <h6>Custom Reports</h6>
+                            <p>Build personalized reports</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Styles -->
+<style>
+.text-gradient {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.stats-card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.05);
+    transition: transform 0.3s ease;
+    height: 100%;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+.stats-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    margin-bottom: 15px;
+}
+
+.stats-content h3 {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.stats-content p {
+    color: #666;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    overflow: hidden;
+    height: 100%;
+}
+
+.chart-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+}
+
+.chart-header h5 {
+    margin: 0;
+    color: #333;
+    font-weight: 600;
+}
+
+.chart-body {
+    padding: 25px;
+}
+
+.analytics-tools-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+
+.tools-header {
+    padding: 20px 25px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.tools-header h5 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 25px;
+}
+
+.tool-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 20px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.tool-item:hover {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.tool-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.tool-item:hover .tool-icon {
+    background: rgba(255,255,255,0.2);
+}
+
+.tool-content h6 {
+    margin: 0 0 5px 0;
+    font-weight: 600;
+}
+
+.tool-content p {
+    margin: 0;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+</style>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Initialize charts
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+});
+
+function initializeCharts() {
+    // Attendance Trends Chart
+    const attendanceCtx = document.getElementById('attendanceChart').getContext('2d');
+    new Chart(attendanceCtx, {
+        type: 'line',
+        data: {
+            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+            datasets: [{
+                label: 'Attendance Rate',
+                data: [85, 87, 89, 91],
+                borderColor: 'rgb(102, 126, 234)',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+
+    // Performance Chart
+    const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+    new Chart(performanceCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Class A', 'Class B', 'Class C', 'Class D'],
+            datasets: [{
+                data: [92, 88, 85, 90],
+                backgroundColor: [
+                    'rgba(102, 126, 234, 0.8)',
+                    'rgba(118, 75, 162, 0.8)',
+                    'rgba(67, 233, 123, 0.8)',
+                    'rgba(56, 249, 215, 0.8)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+function refreshData() {
+    // Simulate data refresh
+    showNotification('Data refreshed successfully!', 'success');
+}
+
+function exportReport() {
+    // Simulate report export
+    showNotification('Report export initiated. You will receive an email when ready.', 'info');
+}
+
+function updateChart(period) {
+    // Update chart based on selected period
+    showNotification(`Chart updated for ${period}`, 'info');
+}
+
+function openPredictiveAnalytics() {
+    // Create modal for predictive analytics
+    const modal = `
+        <div class="modal fade" id="predictiveModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-crystal-ball me-2"></i>Predictive Analytics</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Attendance Predictions</h6>
+                                <p>Based on current trends, next week's attendance is predicted to be <strong>89%</strong></p>
+                                <div class="progress mb-3">
+                                    <div class="progress-bar bg-success" style="width: 89%">89%</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Risk Students</h6>
+                                <p>Students at risk of low attendance: <strong>3</strong></p>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-exclamation-triangle text-warning me-2"></i>John Doe (72%)</li>
+                                    <li><i class="fas fa-exclamation-triangle text-warning me-2"></i>Jane Smith (68%)</li>
+                                    <li><i class="fas fa-exclamation-triangle text-danger me-2"></i>Bob Johnson (65%)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modal);
+    new bootstrap.Modal(document.getElementById('predictiveModal')).show();
+}
+
+function openTrendAnalysis() {
+    const modal = `
+        <div class="modal fade" id="trendModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-chart-line me-2"></i>Trend Analysis</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <h6>Monthly Attendance Trends</h6>
+                        <div class="trend-item">
+                            <span>January 2025</span>
+                            <div class="progress">
+                                <div class="progress-bar bg-info" style="width: 85%">85%</div>
+                            </div>
+                        </div>
+                        <div class="trend-item">
+                            <span>February 2025</span>
+                            <div class="progress">
+                                <div class="progress-bar bg-success" style="width: 88%">88%</div>
+                            </div>
+                        </div>
+                        <div class="trend-item">
+                            <span>March 2025</span>
+                            <div class="progress">
+                                <div class="progress-bar bg-success" style="width: 91%">91%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modal);
+    new bootstrap.Modal(document.getElementById('trendModal')).show();
+}
+
+function openComparativeAnalysis() {
+    const modal = `
+        <div class="modal fade" id="compareModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-balance-scale me-2"></i>Comparative Analysis</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <h6>Class Performance Comparison</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="compare-item">
+                                    <h6>Class A</h6>
+                                    <div class="progress mb-2">
+                                        <div class="progress-bar bg-success" style="width: 92%">92%</div>
+                                    </div>
+                                    <small>Best performing class</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="compare-item">
+                                    <h6>Class B</h6>
+                                    <div class="progress mb-2">
+                                        <div class="progress-bar bg-warning" style="width: 78%">78%</div>
+                                    </div>
+                                    <small>Needs improvement</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modal);
+    new bootstrap.Modal(document.getElementById('compareModal')).show();
+}
+
+function openCustomReports() {
+    const modal = `
+        <div class="modal fade" id="reportsModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-file-alt me-2"></i>Custom Reports Builder</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form>
+                            <div class="mb-3">
+                                <label class="form-label">Report Type</label>
+                                <select class="form-select">
+                                    <option>Attendance Summary</option>
+                                    <option>Student Performance</option>
+                                    <option>Class Comparison</option>
+                                    <option>Monthly Trends</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Date Range</label>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <input type="date" class="form-control" placeholder="Start Date">
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="date" class="form-control" placeholder="End Date">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Format</label>
+                                <select class="form-select">
+                                    <option>PDF</option>
+                                    <option>Excel</option>
+                                    <option>CSV</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="generateCustomReport()">Generate Report</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modal);
+    new bootstrap.Modal(document.getElementById('reportsModal')).show();
+}
+
+function generateCustomReport() {
+    bootstrap.Modal.getInstance(document.getElementById('reportsModal')).hide();
+    showNotification('Custom report is being generated...', 'success');
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show`;
+    notification.style.position = 'fixed';
+    notification.style.top = '20px';
+    notification.style.right = '20px';
+    notification.style.zIndex = '9999';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

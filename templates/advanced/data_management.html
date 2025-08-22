@@ -1,0 +1,590 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0 text-gradient">
+                        <i class="fas fa-database me-2"></i>Data Management
+                    </h1>
+                    <p class="text-muted">Import, export, and manage your data efficiently</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-success" onclick="createBackup()">
+                        <i class="fas fa-shield-alt me-2"></i>Create Backup
+                    </button>
+                    <button class="btn btn-primary" onclick="scheduleBackup()">
+                        <i class="fas fa-clock me-2"></i>Schedule Backup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="data-stat-card">
+                <div class="stat-icon bg-primary">
+                    <i class="fas fa-database"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ data_stats.total_records }}</h3>
+                    <p>Total Records</p>
+                    <small class="text-success"><i class="fas fa-arrow-up"></i> +12% this month</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="data-stat-card">
+                <div class="stat-icon bg-success">
+                    <i class="fas fa-hdd"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ data_stats.storage_used }}</h3>
+                    <p>Storage Used</p>
+                    <small class="text-info">of 10 GB available</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="data-stat-card">
+                <div class="stat-icon bg-warning">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ data_stats.last_backup|date:"M d" }}</h3>
+                    <p>Last Backup</p>
+                    <small class="text-muted">{{ data_stats.last_backup|timesince }} ago</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="data-stat-card">
+                <div class="stat-icon bg-info">
+                    <i class="fas fa-file-export"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ data_stats.export_formats|length }}</h3>
+                    <p>Export Formats</p>
+                    <small class="text-success">Available formats</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Management Tools -->
+    <div class="row">
+        <!-- Export Data -->
+        <div class="col-md-6 mb-4">
+            <div class="management-card">
+                <div class="card-header">
+                    <h5><i class="fas fa-download me-2"></i>Export Data</h5>
+                </div>
+                <div class="card-body">
+                    <form id="exportForm">
+                        <div class="mb-3">
+                            <label for="exportType" class="form-label">Data Type</label>
+                            <select class="form-select" id="exportType" required>
+                                <option value="">Select data type</option>
+                                <option value="students">Students</option>
+                                <option value="teachers">Teachers</option>
+                                <option value="attendance">Attendance Records</option>
+                                <option value="feedback">Feedback Data</option>
+                                <option value="all">All Data</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="exportFormat" class="form-label">Format</label>
+                            <select class="form-select" id="exportFormat" required>
+                                <option value="">Select format</option>
+                                {% for format in data_stats.export_formats %}
+                                <option value="{{ format|lower }}">{{ format }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="dateRange" class="form-label">Date Range</label>
+                            <div class="row">
+                                <div class="col-6">
+                                    <input type="date" class="form-control" id="startDate" placeholder="Start Date">
+                                </div>
+                                <div class="col-6">
+                                    <input type="date" class="form-control" id="endDate" placeholder="End Date">
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-download me-2"></i>Export Data
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Import Data -->
+        <div class="col-md-6 mb-4">
+            <div class="management-card">
+                <div class="card-header">
+                    <h5><i class="fas fa-upload me-2"></i>Import Data</h5>
+                </div>
+                <div class="card-body">
+                    <form id="importForm" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="importType" class="form-label">Data Type</label>
+                            <select class="form-select" id="importType" required>
+                                <option value="">Select data type</option>
+                                <option value="students">Students</option>
+                                <option value="teachers">Teachers</option>
+                                <option value="classrooms">Classrooms</option>
+                                <option value="subjects">Subjects</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="importFile" class="form-label">File</label>
+                            <input type="file" class="form-control" id="importFile" accept=".csv,.xlsx,.json" required>
+                            <div class="form-text">Supported formats: CSV, Excel, JSON</div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="validateData" checked>
+                                <label class="form-check-label" for="validateData">
+                                    Validate data before import
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="skipDuplicates">
+                                <label class="form-check-label" for="skipDuplicates">
+                                    Skip duplicate entries
+                                </label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fas fa-upload me-2"></i>Import Data
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Backup Management -->
+        <div class="col-md-6 mb-4">
+            <div class="management-card">
+                <div class="card-header">
+                    <h5><i class="fas fa-shield-alt me-2"></i>Backup Management</h5>
+                </div>
+                <div class="card-body">
+                    <div class="backup-info mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Last Backup:</span>
+                            <span class="fw-bold">{{ data_stats.last_backup|date:"M d, Y H:i" }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Backup Size:</span>
+                            <span class="fw-bold">{{ data_stats.storage_used }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Status:</span>
+                            <span class="badge bg-success">Healthy</span>
+                        </div>
+                    </div>
+                    <div class="backup-actions">
+                        <button class="btn btn-outline-primary w-100 mb-2" onclick="createBackup()">
+                            <i class="fas fa-plus me-2"></i>Create New Backup
+                        </button>
+                        <button class="btn btn-outline-info w-100 mb-2" onclick="viewBackups()">
+                            <i class="fas fa-list me-2"></i>View All Backups
+                        </button>
+                        <button class="btn btn-outline-warning w-100" onclick="restoreBackup()">
+                            <i class="fas fa-undo me-2"></i>Restore from Backup
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Cleanup -->
+        <div class="col-md-6 mb-4">
+            <div class="management-card">
+                <div class="card-header">
+                    <h5><i class="fas fa-broom me-2"></i>Data Cleanup</h5>
+                </div>
+                <div class="card-body">
+                    <div class="cleanup-options">
+                        <div class="cleanup-item">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Duplicate Records</span>
+                                <span class="badge bg-warning">23 found</span>
+                            </div>
+                            <button class="btn btn-sm btn-outline-warning w-100" onclick="cleanupDuplicates()">
+                                <i class="fas fa-trash-alt me-2"></i>Remove Duplicates
+                            </button>
+                        </div>
+                        <div class="cleanup-item">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Orphaned Records</span>
+                                <span class="badge bg-danger">7 found</span>
+                            </div>
+                            <button class="btn btn-sm btn-outline-danger w-100" onclick="cleanupOrphaned()">
+                                <i class="fas fa-unlink me-2"></i>Remove Orphaned
+                            </button>
+                        </div>
+                        <div class="cleanup-item">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Old Sessions</span>
+                                <span class="badge bg-info">45 found</span>
+                            </div>
+                            <button class="btn btn-sm btn-outline-info w-100" onclick="archiveOldSessions()">
+                                <i class="fas fa-archive me-2"></i>Archive Old Sessions
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Progress Modal -->
+<div class="modal fade" id="progressModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="progressTitle">
+                    <i class="fas fa-cogs me-2"></i>Processing...
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div class="progress mb-3">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         role="progressbar" style="width: 0%" id="progressBar">
+                    </div>
+                </div>
+                <div class="text-center">
+                    <p id="progressText">Initializing...</p>
+                    <small class="text-muted" id="progressDetails">Please wait...</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Styles -->
+<style>
+.text-gradient {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.data-stat-card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.05);
+    transition: transform 0.3s ease;
+    height: 100%;
+}
+
+.data-stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    margin-bottom: 15px;
+}
+
+.stat-content h3 {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.stat-content p {
+    color: #666;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.management-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    overflow: hidden;
+    height: 100%;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 20px 25px;
+    border-bottom: none;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.card-body {
+    padding: 25px;
+}
+
+.backup-info {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 15px;
+}
+
+.cleanup-item {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.cleanup-item:last-child {
+    margin-bottom: 0;
+}
+
+.progress-bar-animated {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+}
+</style>
+
+<!-- Scripts -->
+<script>
+// Export Form Handler
+document.getElementById('exportForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const exportType = document.getElementById('exportType').value;
+    const exportFormat = document.getElementById('exportFormat').value;
+    
+    if (!exportType || !exportFormat) {
+        alert('Please select both data type and format.');
+        return;
+    }
+    
+    showProgressModal('Exporting Data', 'Preparing your data export...');
+    simulateProgress('export', exportType, exportFormat);
+});
+
+// Import Form Handler
+document.getElementById('importForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const importType = document.getElementById('importType').value;
+    const importFile = document.getElementById('importFile').files[0];
+    
+    if (!importType || !importFile) {
+        alert('Please select data type and file.');
+        return;
+    }
+    
+    showProgressModal('Importing Data', 'Processing your data import...');
+    simulateProgress('import', importType, importFile.name);
+});
+
+function showProgressModal(title, text) {
+    document.getElementById('progressTitle').innerHTML = `<i class="fas fa-cogs me-2"></i>${title}`;
+    document.getElementById('progressText').textContent = text;
+    document.getElementById('progressDetails').textContent = 'Please wait...';
+    document.getElementById('progressBar').style.width = '0%';
+    
+    const modal = new bootstrap.Modal(document.getElementById('progressModal'));
+    modal.show();
+}
+
+function simulateProgress(operation, type, detail) {
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const progressDetails = document.getElementById('progressDetails');
+    
+    let progress = 0;
+    const steps = [
+        'Validating data...',
+        'Processing records...',
+        'Applying changes...',
+        'Finalizing...'
+    ];
+    let currentStep = 0;
+    
+    const interval = setInterval(() => {
+        progress += Math.random() * 20;
+        
+        if (progress >= 100) {
+            progress = 100;
+            clearInterval(interval);
+            
+            progressText.textContent = `${operation === 'export' ? 'Export' : 'Import'} completed successfully!`;
+            progressDetails.textContent = `${operation === 'export' ? 'Downloaded' : 'Imported'} ${type} data.`;
+            
+            setTimeout(() => {
+                bootstrap.Modal.getInstance(document.getElementById('progressModal')).hide();
+                showNotification(`${operation === 'export' ? 'Export' : 'Import'} completed successfully!`, 'success');
+            }, 2000);
+        } else {
+            if (progress > (currentStep + 1) * 25 && currentStep < steps.length - 1) {
+                currentStep++;
+            }
+            progressText.textContent = steps[currentStep];
+            progressDetails.textContent = `Processing ${type}... ${Math.floor(progress)}%`;
+        }
+        
+        progressBar.style.width = progress + '%';
+    }, 500);
+}
+
+function createBackup() {
+    showProgressModal('Creating Backup', 'Creating system backup...');
+    simulateProgress('backup', 'system', 'full backup');
+}
+
+function scheduleBackup() {
+    const scheduleModal = `
+        <div class="modal fade" id="scheduleModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-clock me-2"></i>Schedule Backup</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="scheduleForm">
+                            <div class="mb-3">
+                                <label class="form-label">Backup Frequency</label>
+                                <select class="form-select" id="frequency" required>
+                                    <option value="">Select frequency</option>
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Backup Time</label>
+                                <input type="time" class="form-control" id="backupTime" value="02:00" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Retention Period (days)</label>
+                                <input type="number" class="form-control" id="retention" value="30" min="1" max="365" required>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="emailNotify" checked>
+                                    <label class="form-check-label" for="emailNotify">
+                                        Email notification on completion
+                                    </label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="saveSchedule()">Schedule Backup</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('scheduleModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', scheduleModal);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('scheduleModal'));
+    modal.show();
+}
+
+function saveSchedule() {
+    const frequency = document.getElementById('frequency').value;
+    const backupTime = document.getElementById('backupTime').value;
+    const retention = document.getElementById('retention').value;
+    const emailNotify = document.getElementById('emailNotify').checked;
+    
+    if (!frequency || !backupTime || !retention) {
+        alert('Please fill in all required fields.');
+        return;
+    }
+    
+    // Close modal
+    bootstrap.Modal.getInstance(document.getElementById('scheduleModal')).hide();
+    
+    // Show success message
+    showNotification(`Backup scheduled ${frequency} at ${backupTime} with ${retention} days retention.`, 'success');
+}
+
+function viewBackups() {
+    alert('Backup history viewer coming soon!');
+}
+
+function restoreBackup() {
+    if (confirm('Are you sure you want to restore from backup? This will overwrite current data.')) {
+        showProgressModal('Restoring Backup', 'Restoring from backup...');
+        simulateProgress('restore', 'system', 'backup restore');
+    }
+}
+
+function cleanupDuplicates() {
+    if (confirm('Are you sure you want to remove duplicate records?')) {
+        showProgressModal('Cleaning Data', 'Removing duplicate records...');
+        simulateProgress('cleanup', 'duplicates', 'duplicate removal');
+    }
+}
+
+function cleanupOrphaned() {
+    if (confirm('Are you sure you want to remove orphaned records?')) {
+        showProgressModal('Cleaning Data', 'Removing orphaned records...');
+        simulateProgress('cleanup', 'orphaned', 'orphaned removal');
+    }
+}
+
+function archiveOldSessions() {
+    if (confirm('Are you sure you want to archive old sessions?')) {
+        showProgressModal('Archiving Data', 'Archiving old sessions...');
+        simulateProgress('archive', 'sessions', 'session archival');
+    }
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show`;
+    notification.style.position = 'fixed';
+    notification.style.top = '20px';
+    notification.style.right = '20px';
+    notification.style.zIndex = '9999';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

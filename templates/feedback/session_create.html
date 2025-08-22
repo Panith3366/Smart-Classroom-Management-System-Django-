@@ -1,0 +1,1047 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0 text-gradient-feedback">
+                        <i class="fas fa-comment-plus me-2"></i>Create Feedback Session
+                    </h1>
+                    <p class="text-muted">Design and launch a comprehensive feedback collection session</p>
+                </div>
+                <a href="{% url 'feedback:feedback_dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Creation Interface -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="feedback-creator">
+                <!-- Template Selection -->
+                <div class="template-selector mb-4">
+                    <h5 class="mb-3">
+                        <i class="fas fa-magic me-2"></i>Start with a Template
+                    </h5>
+                    <div class="template-grid">
+                        <div class="template-card" data-template="blank">
+                            <div class="template-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <h6>Blank Session</h6>
+                            <p>Start from scratch</p>
+                        </div>
+                        
+                        <div class="template-card" data-template="student_feedback">
+                            <div class="template-icon">
+                                <i class="fas fa-user-graduate"></i>
+                            </div>
+                            <h6>Student Feedback</h6>
+                            <p>Collect student opinions</p>
+                        </div>
+                        
+                        <div class="template-card" data-template="course_evaluation">
+                            <div class="template-icon">
+                                <i class="fas fa-book-open"></i>
+                            </div>
+                            <h6>Course Evaluation</h6>
+                            <p>Evaluate course content</p>
+                        </div>
+                        
+                        <div class="template-card" data-template="peer_review">
+                            <div class="template-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <h6>Peer Review</h6>
+                            <p>Peer-to-peer feedback</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Form -->
+                <form method="post" id="feedbackForm" class="feedback-form">
+                    {% csrf_token %}
+                    
+                    <!-- Basic Information -->
+                    <div class="form-section active" id="basicInfo">
+                        <div class="glass-card">
+                            <div class="card-header-modern">
+                                <h5 class="mb-0 text-white">
+                                    <i class="fas fa-info-circle me-2"></i>Basic Information
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-8 mb-3">
+                                        <label for="title" class="form-label">Session Title *</label>
+                                        <input type="text" class="form-control modern-input" id="title" name="title" 
+                                               placeholder="e.g., Mid-term Course Feedback" required>
+                                    </div>
+                                    
+                                    <div class="col-md-4 mb-3">
+                                        <label for="category" class="form-label">Category *</label>
+                                        <select class="form-select modern-select" id="category" name="category" required>
+                                            <option value="">Select Category</option>
+                                            {% for category in categories %}
+                                            <option value="{{ category.id }}" data-color="{{ category.color }}" data-icon="{{ category.icon }}">
+                                                {{ category.name }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="col-12 mb-3">
+                                        <label for="description" class="form-label">Description</label>
+                                        <textarea class="form-control modern-input" id="description" name="description" 
+                                                  rows="3" placeholder="Describe the purpose and goals of this feedback session"></textarea>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="classroom" class="form-label">Target Classroom</label>
+                                        <select class="form-select modern-select" id="classroom" name="classroom">
+                                            <option value="">Select Classroom (Optional)</option>
+                                            {% for classroom in classrooms %}
+                                            <option value="{{ classroom.id }}">{{ classroom.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="subject" class="form-label">Related Subject</label>
+                                        <select class="form-select modern-select" id="subject" name="subject">
+                                            <option value="">Select Subject (Optional)</option>
+                                            {% for subject in subjects %}
+                                            <option value="{{ subject.id }}">{{ subject.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Question Builder -->
+                    <div class="form-section mt-4" id="questionBuilder">
+                        <div class="glass-card">
+                            <div class="card-header-modern">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0 text-white">
+                                        <i class="fas fa-question-circle me-2"></i>Question Builder
+                                    </h5>
+                                    <button type="button" class="btn btn-light btn-sm" onclick="addQuestion()">
+                                        <i class="fas fa-plus me-2"></i>Add Question
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div id="questionsContainer">
+                                    <!-- Questions will be added here dynamically -->
+                                </div>
+                                
+                                <div class="question-types-palette">
+                                    <h6 class="mb-3">Question Types</h6>
+                                    <div class="question-type-grid">
+                                        <div class="question-type-item" data-type="text">
+                                            <i class="fas fa-font"></i>
+                                            <span>Text Response</span>
+                                        </div>
+                                        <div class="question-type-item" data-type="rating">
+                                            <i class="fas fa-star"></i>
+                                            <span>Rating Scale</span>
+                                        </div>
+                                        <div class="question-type-item" data-type="multiple_choice">
+                                            <i class="fas fa-list-ul"></i>
+                                            <span>Multiple Choice</span>
+                                        </div>
+                                        <div class="question-type-item" data-type="yes_no">
+                                            <i class="fas fa-check-circle"></i>
+                                            <span>Yes/No</span>
+                                        </div>
+                                        <div class="question-type-item" data-type="scale">
+                                            <i class="fas fa-sliders-h"></i>
+                                            <span>Scale (1-10)</span>
+                                        </div>
+                                        <div class="question-type-item" data-type="emoji">
+                                            <i class="fas fa-smile"></i>
+                                            <span>Emoji Rating</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settings & Configuration -->
+                    <div class="form-section mt-4" id="settings">
+                        <div class="glass-card">
+                            <div class="card-header-modern">
+                                <h5 class="mb-0 text-white">
+                                    <i class="fas fa-cogs me-2"></i>Settings & Configuration
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <!-- Visibility Settings -->
+                                    <div class="col-md-6 mb-4">
+                                        <h6 class="mb-3">Visibility & Access</h6>
+                                        <div class="setting-group">
+                                            <div class="form-check form-check-card">
+                                                <input class="form-check-input" type="radio" name="visibility" id="visibility_private" value="private" checked>
+                                                <label class="form-check-label" for="visibility_private">
+                                                    <i class="fas fa-lock"></i>
+                                                    <strong>Private</strong>
+                                                    <small>Only selected participants can respond</small>
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="form-check form-check-card">
+                                                <input class="form-check-input" type="radio" name="visibility" id="visibility_public" value="public">
+                                                <label class="form-check-label" for="visibility_public">
+                                                    <i class="fas fa-globe"></i>
+                                                    <strong>Public</strong>
+                                                    <small>Anyone with the link can respond</small>
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="form-check form-check-card">
+                                                <input class="form-check-input" type="radio" name="visibility" id="visibility_anonymous" value="anonymous">
+                                                <label class="form-check-label" for="visibility_anonymous">
+                                                    <i class="fas fa-user-secret"></i>
+                                                    <strong>Anonymous</strong>
+                                                    <small>Responses are collected anonymously</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Response Settings -->
+                                    <div class="col-md-6 mb-4">
+                                        <h6 class="mb-3">Response Settings</h6>
+                                        <div class="setting-group">
+                                            <div class="form-check form-switch modern-switch">
+                                                <input class="form-check-input" type="checkbox" id="allow_multiple_responses" name="allow_multiple_responses">
+                                                <label class="form-check-label" for="allow_multiple_responses">
+                                                    Allow multiple responses per user
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="form-check form-switch modern-switch">
+                                                <input class="form-check-input" type="checkbox" id="send_notifications" name="send_notifications" checked>
+                                                <label class="form-check-label" for="send_notifications">
+                                                    Send notifications to participants
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="form-check form-switch modern-switch">
+                                                <input class="form-check-input" type="checkbox" id="auto_remind" name="auto_remind">
+                                                <label class="form-check-label" for="auto_remind">
+                                                    Send automatic reminders
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Timing Settings -->
+                                    <div class="col-12 mb-3">
+                                        <h6 class="mb-3">Timing</h6>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label for="end_date" class="form-label">End Date (Optional)</label>
+                                                <input type="datetime-local" class="form-control modern-input" id="end_date" name="end_date">
+                                            </div>
+                                            <div class="col-md-6" id="reminderSettings" style="display: none;">
+                                                <label for="reminder_interval_hours" class="form-label">Reminder Interval (hours)</label>
+                                                <input type="number" class="form-control modern-input" id="reminder_interval_hours" 
+                                                       name="reminder_interval_hours" value="24" min="1" max="168">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Participant Selection -->
+                    <div class="form-section mt-4" id="participants">
+                        <div class="glass-card">
+                            <div class="card-header-modern">
+                                <h5 class="mb-0 text-white">
+                                    <i class="fas fa-users me-2"></i>Select Participants
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="participant-selector">
+                                    <div class="selector-tabs">
+                                        <button type="button" class="tab-btn active" data-tab="classroom-tab">
+                                            <i class="fas fa-school"></i> By Classroom
+                                        </button>
+                                        <button type="button" class="tab-btn" data-tab="individual-tab">
+                                            <i class="fas fa-user"></i> Individual Selection
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="tab-content">
+                                        <div class="tab-pane active" id="classroom-tab">
+                                            <p class="text-muted mb-3">Select a classroom to automatically include all students</p>
+                                            <div class="classroom-grid">
+                                                {% for classroom in classrooms %}
+                                                <div class="classroom-card" data-classroom-id="{{ classroom.id }}">
+                                                    <div class="classroom-info">
+                                                        <h6>{{ classroom.name }}</h6>
+                                                        <small class="text-muted">{{ classroom.students.count }} students</small>
+                                                    </div>
+                                                    <div class="classroom-select">
+                                                        <input type="checkbox" class="form-check-input" id="classroom_{{ classroom.id }}" 
+                                                               name="target_classrooms" value="{{ classroom.id }}">
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="tab-pane" id="individual-tab">
+                                            <div class="student-selector">
+                                                <div class="search-box mb-3">
+                                                    <input type="text" class="form-control" id="studentSearch" 
+                                                           placeholder="Search students...">
+                                                </div>
+                                                <div class="student-list">
+                                                    {% for student in students %}
+                                                    <div class="student-item" data-name="{{ student.get_full_name|lower }}">
+                                                        <div class="student-info">
+                                                            <div class="student-avatar">
+                                                                {{ student.first_name.0 }}{{ student.last_name.0 }}
+                                                            </div>
+                                                            <div class="student-details">
+                                                                <h6>{{ student.get_full_name }}</h6>
+                                                                <small class="text-muted">{{ student.email }}</small>
+                                                            </div>
+                                                        </div>
+                                                        <div class="student-select">
+                                                            <input type="checkbox" class="form-check-input" 
+                                                                   name="target_users" value="{{ student.id }}">
+                                                        </div>
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Section -->
+                    <div class="submit-section mt-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="save_as_draft" name="save_as_draft">
+                                <label class="form-check-label" for="save_as_draft">
+                                    Save as draft
+                                </label>
+                            </div>
+                            <div>
+                                <button type="button" class="btn btn-outline-secondary me-2" onclick="previewSession()">
+                                    <i class="fas fa-eye me-2"></i>Preview
+                                </button>
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="fas fa-rocket me-2"></i>Launch Session
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Live Preview -->
+            <div class="preview-panel glass-card sticky-top">
+                <div class="card-header-modern">
+                    <h6 class="mb-0 text-white">
+                        <i class="fas fa-eye me-2"></i>Live Preview
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="session-preview">
+                        <div class="preview-header">
+                            <h6 id="preview-title">Untitled Session</h6>
+                            <div class="preview-category" id="preview-category">
+                                <i class="fas fa-tag"></i>
+                                <span>No category</span>
+                            </div>
+                        </div>
+                        
+                        <div class="preview-description" id="preview-description">
+                            <p class="text-muted">No description provided</p>
+                        </div>
+                        
+                        <div class="preview-questions" id="preview-questions">
+                            <h6>Questions</h6>
+                            <div class="question-count">
+                                <span class="badge bg-primary">0 questions</span>
+                            </div>
+                        </div>
+                        
+                        <div class="preview-settings" id="preview-settings">
+                            <h6>Settings</h6>
+                            <div class="settings-list">
+                                <!-- Settings will be populated here -->
+                            </div>
+                        </div>
+                        
+                        <div class="preview-participants" id="preview-participants">
+                            <h6>Participants</h6>
+                            <div class="participant-count">
+                                <span class="badge bg-info">0 selected</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Question Template (Hidden) -->
+<div id="questionTemplate" style="display: none;">
+    <div class="question-item">
+        <div class="question-header">
+            <div class="question-type-badge"></div>
+            <div class="question-actions">
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="editQuestion(this)">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeQuestion(this)">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+        <div class="question-content">
+            <input type="text" class="form-control question-text" placeholder="Enter your question...">
+            <div class="question-options" style="display: none;">
+                <!-- Options for multiple choice questions -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Advanced Styles -->
+<style>
+.text-gradient-feedback {
+    background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #f5576c);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradientShift 4s ease infinite;
+}
+
+.feedback-creator {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+}
+
+.template-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.template-card {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.template-card:hover {
+    border-color: #667eea;
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+}
+
+.template-card.selected {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.template-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin: 0 auto 15px;
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.card-header-modern {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    padding: 20px;
+    border: none;
+}
+
+.modern-input, .modern-select {
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 12px 16px;
+    transition: all 0.3s ease;
+}
+
+.modern-input:focus, .modern-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.question-types-palette {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.question-type-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.question-type-item {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.question-type-item:hover {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.question-type-item i {
+    font-size: 20px;
+    color: #667eea;
+    margin-bottom: 8px;
+}
+
+.question-item {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+}
+
+.question-item:hover {
+    border-color: #667eea;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
+}
+
+.question-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.question-type-badge {
+    background: #667eea;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+}
+
+.form-check-card {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+}
+
+.form-check-card:hover {
+    border-color: #667eea;
+}
+
+.form-check-card .form-check-input:checked ~ .form-check-label {
+    color: #667eea;
+}
+
+.form-check-card .form-check-label {
+    cursor: pointer;
+    width: 100%;
+}
+
+.form-check-card .form-check-label i {
+    font-size: 20px;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.setting-group {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.modern-switch .form-check-input {
+    width: 3rem;
+    height: 1.5rem;
+    border-radius: 1rem;
+}
+
+.modern-switch .form-check-input:checked {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+.participant-selector {
+    min-height: 300px;
+}
+
+.selector-tabs {
+    display: flex;
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 12px 20px;
+    color: #6c757d;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.tab-btn.active {
+    color: #667eea;
+    border-bottom-color: #667eea;
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+.classroom-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.classroom-card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.classroom-card:hover {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.student-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.student-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.student-item:hover {
+    background: #f8f9fa;
+}
+
+.student-info {
+    display: flex;
+    align-items: center;
+}
+
+.student-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-right: 12px;
+}
+
+.preview-panel {
+    top: 20px;
+}
+
+.session-preview {
+    font-size: 0.9rem;
+}
+
+.preview-header {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.preview-category {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #6c757d;
+    margin-top: 8px;
+}
+
+.preview-description {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.preview-questions, .preview-settings, .preview-participants {
+    margin-bottom: 20px;
+}
+
+.preview-questions h6, .preview-settings h6, .preview-participants h6 {
+    font-size: 0.9rem;
+    color: #495057;
+    margin-bottom: 8px;
+}
+
+.submit-section {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+}
+</style>
+
+<!-- Advanced JavaScript -->
+<script>
+let questionCount = 0;
+let selectedTemplate = 'blank';
+
+// Template Selection
+document.addEventListener('DOMContentLoaded', function() {
+    // Template selection
+    document.querySelectorAll('.template-card').forEach(card => {
+        card.addEventListener('click', function() {
+            document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+            this.classList.add('selected');
+            selectedTemplate = this.dataset.template;
+            loadTemplate(selectedTemplate);
+        });
+    });
+    
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabId = this.dataset.tab;
+            
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+    
+    // Auto-reminder toggle
+    document.getElementById('auto_remind').addEventListener('change', function() {
+        document.getElementById('reminderSettings').style.display = this.checked ? 'block' : 'none';
+    });
+    
+    // Student search
+    document.getElementById('studentSearch').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        document.querySelectorAll('.student-item').forEach(item => {
+            const name = item.dataset.name;
+            item.style.display = name.includes(searchTerm) ? 'flex' : 'none';
+        });
+    });
+    
+    // Live preview updates
+    setupLivePreview();
+});
+
+function loadTemplate(templateType) {
+    const templates = {
+        'student_feedback': {
+            title: 'Student Feedback Session',
+            description: 'Collect valuable feedback from students about their learning experience',
+            questions: [
+                { type: 'rating', text: 'How would you rate the overall course content?' },
+                { type: 'text', text: 'What did you like most about this course?' },
+                { type: 'text', text: 'What could be improved?' },
+                { type: 'scale', text: 'How likely are you to recommend this course?' }
+            ]
+        },
+        'course_evaluation': {
+            title: 'Course Evaluation',
+            description: 'Comprehensive evaluation of course effectiveness and quality',
+            questions: [
+                { type: 'rating', text: 'Rate the course difficulty level' },
+                { type: 'multiple_choice', text: 'Which teaching method was most effective?', options: ['Lectures', 'Practical exercises', 'Group discussions', 'Online resources'] },
+                { type: 'yes_no', text: 'Were the learning objectives clearly defined?' },
+                { type: 'text', text: 'Additional comments or suggestions' }
+            ]
+        },
+        'peer_review': {
+            title: 'Peer Review Session',
+            description: 'Collaborative feedback between peers for mutual improvement',
+            questions: [
+                { type: 'rating', text: 'Rate your peer\'s contribution to group work' },
+                { type: 'text', text: 'What are your peer\'s strengths?' },
+                { type: 'text', text: 'Areas for improvement' },
+                { type: 'emoji', text: 'Overall collaboration experience' }
+            ]
+        }
+    };
+    
+    if (templates[templateType]) {
+        const template = templates[templateType];
+        document.getElementById('title').value = template.title;
+        document.getElementById('description').value = template.description;
+        
+        // Clear existing questions
+        document.getElementById('questionsContainer').innerHTML = '';
+        questionCount = 0;
+        
+        // Add template questions
+        template.questions.forEach(question => {
+            addQuestion(question.type, question.text, question.options);
+        });
+        
+        updatePreview();
+    }
+}
+
+function addQuestion(type = 'text', text = '', options = []) {
+    questionCount++;
+    const container = document.getElementById('questionsContainer');
+    const questionDiv = document.createElement('div');
+    questionDiv.className = 'question-item';
+    questionDiv.dataset.questionId = questionCount;
+    
+    const typeLabels = {
+        'text': 'Text Response',
+        'rating': 'Rating Scale',
+        'multiple_choice': 'Multiple Choice',
+        'yes_no': 'Yes/No',
+        'scale': 'Scale (1-10)',
+        'emoji': 'Emoji Rating'
+    };
+    
+    questionDiv.innerHTML = `
+        <div class="question-header">
+            <div class="question-type-badge">${typeLabels[type] || 'Text Response'}</div>
+            <div class="question-actions">
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="editQuestion(this)">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeQuestion(this)">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+        <div class="question-content">
+            <input type="text" class="form-control question-text" placeholder="Enter your question..." value="${text}" name="question_${questionCount}_text">
+            <input type="hidden" name="question_${questionCount}_type" value="${type}">
+            <div class="question-options" style="display: ${type === 'multiple_choice' ? 'block' : 'none'};">
+                ${options.map((option, index) => `
+                    <div class="input-group mb-2">
+                        <input type="text" class="form-control" name="question_${questionCount}_option_${index}" value="${option}" placeholder="Option ${index + 1}">
+                        <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `).join('')}
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addOption(this)">
+                    <i class="fas fa-plus"></i> Add Option
+                </button>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(questionDiv);
+    updatePreview();
+}
+
+function removeQuestion(button) {
+    const questionItem = button.closest('.question-item');
+    questionItem.remove();
+    updatePreview();
+}
+
+function editQuestion(button) {
+    // Implementation for editing questions
+    alert('Question editing feature coming soon!');
+}
+
+function addOption(button) {
+    const optionsContainer = button.parentElement;
+    const questionId = button.closest('.question-item').dataset.questionId;
+    const optionCount = optionsContainer.querySelectorAll('.input-group').length;
+    
+    const optionDiv = document.createElement('div');
+    optionDiv.className = 'input-group mb-2';
+    optionDiv.innerHTML = `
+        <input type="text" class="form-control" name="question_${questionId}_option_${optionCount}" placeholder="Option ${optionCount + 1}">
+        <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    optionsContainer.insertBefore(optionDiv, button);
+}
+
+function removeOption(button) {
+    button.closest('.input-group').remove();
+}
+
+function setupLivePreview() {
+    // Update preview on input changes
+    const inputs = ['title', 'description', 'category'];
+    inputs.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('input', updatePreview);
+            element.addEventListener('change', updatePreview);
+        }
+    });
+    
+    // Update preview on checkbox changes
+    const checkboxes = ['allow_multiple_responses', 'send_notifications', 'auto_remind'];
+    checkboxes.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('change', updatePreview);
+        }
+    });
+    
+    // Update preview on radio button changes
+    document.querySelectorAll('input[name="visibility"]').forEach(radio => {
+        radio.addEventListener('change', updatePreview);
+    });
+    
+    updatePreview();
+}
+
+function updatePreview() {
+    // Update title
+    const title = document.getElementById('title').value || 'Untitled Session';
+    document.getElementById('preview-title').textContent = title;
+    
+    // Update description
+    const description = document.getElementById('description').value || 'No description provided';
+    document.getElementById('preview-description').innerHTML = `<p class="text-muted">${description}</p>`;
+    
+    // Update category
+    const categorySelect = document.getElementById('category');
+    const categoryText = categorySelect.selectedIndex > 0 ? categorySelect.options[categorySelect.selectedIndex].text : 'No category';
+    document.getElementById('preview-category').innerHTML = `<i class="fas fa-tag"></i><span>${categoryText}</span>`;
+    
+    // Update question count
+    const questionCount = document.querySelectorAll('.question-item').length;
+    document.querySelector('.question-count .badge').textContent = `${questionCount} questions`;
+    
+    // Update settings
+    const settingsList = document.querySelector('.settings-list');
+    settingsList.innerHTML = '';
+    
+    const visibility = document.querySelector('input[name="visibility"]:checked').value;
+    const visibilityLabels = { 'private': 'Private', 'public': 'Public', 'anonymous': 'Anonymous' };
+    settingsList.innerHTML += `<div class="badge bg-primary me-1 mb-1">${visibilityLabels[visibility]}</div>`;
+    
+    if (document.getElementById('allow_multiple_responses').checked) {
+        settingsList.innerHTML += '<div class="badge bg-info me-1 mb-1">Multiple Responses</div>';
+    }
+    
+    if (document.getElementById('send_notifications').checked) {
+        settingsList.innerHTML += '<div class="badge bg-success me-1 mb-1">Notifications</div>';
+    }
+    
+    if (document.getElementById('auto_remind').checked) {
+        settingsList.innerHTML += '<div class="badge bg-warning me-1 mb-1">Auto Reminders</div>';
+    }
+    
+    // Update participant count
+    const selectedStudents = document.querySelectorAll('input[name="target_users"]:checked').length;
+    const selectedClassrooms = document.querySelectorAll('input[name="target_classrooms"]:checked').length;
+    let totalParticipants = selectedStudents;
+    
+    // Add classroom students (simplified calculation)
+    document.querySelectorAll('input[name="target_classrooms"]:checked').forEach(checkbox => {
+        const classroomCard = checkbox.closest('.classroom-card');
+        const studentCount = parseInt(classroomCard.querySelector('small').textContent.match(/\d+/)[0]);
+        totalParticipants += studentCount;
+    });
+    
+    document.querySelector('.participant-count .badge').textContent = `${totalParticipants} selected`;
+}
+
+function previewSession() {
+    // Open preview in modal or new window
+    alert('Preview functionality coming soon!');
+}
+
+// Question type selection
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.question-type-item')) {
+        const typeItem = e.target.closest('.question-type-item');
+        const type = typeItem.dataset.type;
+        addQuestion(type);
+    }
+});
+</script>
+{% endblock %}

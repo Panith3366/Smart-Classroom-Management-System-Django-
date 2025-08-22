@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">Submit Assignment</h1>
+                    <p class="text-muted mb-0">{{ assignment.title }}</p>
+                </div>
+                <a href="{% url 'assignments:assignment_detail' assignment.id %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Assignment
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Assignment Info -->
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Assignment Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Subject:</strong> {{ assignment.subject.name|default:"General Assignment" }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Due Date:</strong> 
+                            <span class="{% if assignment.due_date < now %}text-danger{% else %}text-success{% endif %}">
+                                {{ assignment.due_date|date:"M d, Y H:i" }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <strong>Max Points:</strong> {{ assignment.max_points }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Teacher:</strong> {{ assignment.teacher.get_full_name }}
+                        </div>
+                    </div>
+                    
+                    {% if assignment.due_date < now %}
+                        <div class="alert alert-warning mt-3">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            <strong>Warning:</strong> This assignment is overdue. Late submissions may be penalized.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Submission Form -->
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Your Submission</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="submission_text" class="form-label">
+                                <strong>Written Response</strong>
+                                <small class="text-muted">(Optional)</small>
+                            </label>
+                            <textarea class="form-control" id="submission_text" name="submission_text" 
+                                      rows="8" placeholder="Enter your written response here..."></textarea>
+                            <div class="form-text">
+                                You can provide a written response, explanation, or notes about your submission.
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="submission_file" class="form-label">
+                                <strong>File Upload</strong>
+                                <small class="text-muted">(Optional)</small>
+                            </label>
+                            <input type="file" class="form-control" id="submission_file" name="submission_file">
+                            <div class="form-text">
+                                Upload documents, images, or other files related to your assignment. 
+                                Supported formats: PDF, DOC, DOCX, TXT, JPG, PNG, etc.
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Note:</strong> You can update your submission until the due date. 
+                            Your latest submission will be considered for grading.
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'assignments:assignment_detail' assignment.id %}" class="btn btn-secondary">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload"></i> Submit Assignment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// File upload validation
+document.getElementById('submission_file').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        if (file.size > maxSize) {
+            alert('File size must be less than 10MB');
+            e.target.value = '';
+            return;
+        }
+        
+        const allowedTypes = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'text/plain',
+            'image/jpeg',
+            'image/png',
+            'image/gif'
+        ];
+        
+        if (!allowedTypes.includes(file.type)) {
+            alert('Please upload a valid file type (PDF, DOC, DOCX, TXT, JPG, PNG, GIF)');
+            e.target.value = '';
+            return;
+        }
+    }
+});
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const textArea = document.getElementById('submission_text');
+    const fileInput = document.getElementById('submission_file');
+    
+    if (!textArea.value.trim() && !fileInput.files.length) {
+        e.preventDefault();
+        alert('Please provide either a written response or upload a file.');
+        return false;
+    }
+    
+    return confirm('Are you sure you want to submit this assignment?');
+});
+</script>
+{% endblock %}

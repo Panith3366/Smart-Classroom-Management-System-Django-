@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Classroom Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .wrapper {
+            display: flex;
+            flex: 1;
+        }
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding-top: 20px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        .content {
+            flex: 1;
+            padding: 20px;
+        }
+        .navbar-brand {
+            font-weight: bold;
+        }
+        footer {
+            text-align: center;
+            padding: 15px;
+            background-color: #f1f1f1;
+        }
+        
+        /* Advanced Sidebar Styling */
+        .nav-item {
+            margin-bottom: 5px;
+        }
+        
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8) !important;
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin: 0 15px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .nav-link:hover {
+            color: white !important;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .nav-link.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white !important;
+        }
+        
+        .nav-link i {
+            width: 20px;
+            text-align: center;
+            margin-right: 10px;
+        }
+        
+        /* Special styling for new features */
+        .nav-link.feature-new {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white !important;
+            position: relative;
+        }
+        
+        .nav-link.feature-new::after {
+            content: 'NEW';
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            background: #fff;
+            color: #ff6b6b;
+            font-size: 8px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+        
+        .nav-link.feature-new:hover {
+            background: linear-gradient(45deg, #ee5a24, #ff6b6b);
+            transform: translateX(5px) scale(1.02);
+        }
+        
+        /* Attendance specific styling */
+        .nav-link.attendance-link {
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+        }
+        
+        .nav-link.attendance-link:hover {
+            background: linear-gradient(45deg, #00f2fe, #4facfe);
+            transform: translateX(5px) scale(1.02);
+        }
+        
+        /* Feedback specific styling */
+        .nav-link.feedback-link {
+            background: linear-gradient(45deg, #43e97b, #38f9d7);
+        }
+        
+        .nav-link.feedback-link:hover {
+            background: linear-gradient(45deg, #38f9d7, #43e97b);
+            transform: translateX(5px) scale(1.02);
+        }
+        
+        /* Advanced Features styling */
+        .nav-link.advanced-link {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            position: relative;
+        }
+        
+        .nav-link.advanced-link:hover {
+            background: linear-gradient(45deg, #5a6fd8, #6a4190);
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+        }
+        
+        /* Advanced badge styling */
+        .advanced-badge {
+            background: linear-gradient(45deg, #ff6b6b, #feca57) !important;
+            border-radius: 8px !important;
+            width: auto !important;
+            height: auto !important;
+            padding: 2px 6px !important;
+            font-size: 9px !important;
+            font-weight: bold;
+        }
+        
+        /* Enhanced menu section for advanced features */
+        .menu-section.advanced-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 20px 15px 10px;
+            padding: 10px 15px;
+            border-left: 3px solid #feca57;
+        }
+        
+
+        
+        /* Menu section headers */
+        .menu-section {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 15px 20px 5px;
+            margin-top: 20px;
+        }
+        
+        .menu-section:first-child {
+            margin-top: 0;
+        }
+        
+        /* Animated icons */
+        .nav-link i {
+            transition: transform 0.3s ease;
+        }
+        
+        .nav-link:hover i {
+            transform: scale(1.2) rotate(5deg);
+        }
+        
+        /* Badge for notifications */
+        .nav-badge {
+            position: absolute;
+            top: 8px;
+            right: 15px;
+            background: #ff4757;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-primary sticky-top">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">Smart Classroom</a>
+    <div class="d-flex align-items-center">
+      {% if user.is_authenticated %}
+        <span class="nav-link text-light me-2">
+          <i class="fas fa-user me-1"></i>{{ user.get_full_name|default:user.username }}
+        </span>
+        <a class="nav-link text-light" href="{% url 'logout' %}">
+          <i class="fas fa-sign-out-alt me-1"></i>Logout
+        </a>
+      {% else %}
+        <a class="nav-link text-light" href="{% url 'login' %}">
+          <i class="fas fa-sign-in-alt me-1"></i>Login
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+<div class="wrapper">
+    <div class="sidebar border-end">
+        <ul class="nav flex-column">
+            <!-- Main Dashboard -->
+            <div class="menu-section">Dashboard</div>
+            <li class="nav-item">
+                <a href="/" class="nav-link">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+            </li>
+            
+            <!-- Role-based menu items -->
+            {% if user.is_authenticated %}
+                
+                <!-- Student Menu -->
+                {% if user.role == 'student' %}
+                    <div class="menu-section">My Dashboard</div>
+                    <li class="nav-item">
+                        <a href="{% url 'attendance:attendance_student_profile' user.id %}" class="nav-link attendance-link">
+                            <i class="fas fa-calendar-check"></i> My Attendance
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'grades:my_grades' %}" class="nav-link">
+                            <i class="fas fa-chart-line"></i> My Grades
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'users:edit_user' user.id %}" class="nav-link">
+                            <i class="fas fa-user-edit"></i> Edit Profile
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'assignments:student_assignments' %}" class="nav-link">
+                            <i class="fas fa-tasks"></i> Assignments
+                        </a>
+                    </li>
+                
+                <!-- Teacher Menu -->
+                {% elif user.role == 'teacher' %}
+                    <div class="menu-section">Teaching Tools</div>
+                    <li class="nav-item">
+                        <a href="/classrooms/" class="nav-link">
+                            <i class="fas fa-school"></i> My Classrooms
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/students/" class="nav-link">
+                            <i class="fas fa-user-graduate"></i> Students
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/subjects/" class="nav-link">
+                            <i class="fas fa-book"></i> Subjects
+                        </a>
+                    </li>
+                    
+                    <div class="menu-section">Academic Activities</div>
+                    <li class="nav-item">
+                        <a href="{% url 'assignments:assignments_router' %}" class="nav-link">
+                            <i class="fas fa-tasks"></i> Assignments
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/quizzes/" class="nav-link">
+                            <i class="fas fa-question-circle"></i> Quizzes
+                        </a>
+                    </li>
+                    
+                    <div class="menu-section">Attendance & Feedback</div>
+                    <li class="nav-item">
+                        <a href="/attendance/" class="nav-link attendance-link">
+                            <i class="fas fa-calendar-check"></i> Attendance
+                            <span class="nav-badge" id="attendance-badge" style="display: none;">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/feedback/" class="nav-link feedback-link">
+                            <i class="fas fa-comments"></i> Feedback
+                            <span class="nav-badge" id="feedback-badge" style="display: none;">0</span>
+                        </a>
+                    </li>
+                
+                <!-- Parent Menu -->
+                {% elif user.role == 'parent' %}
+                    <div class="menu-section">My Children</div>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" onclick="alert('Children attendance feature coming soon!')">
+                            <i class="fas fa-calendar-check"></i> Children's Attendance
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" onclick="alert('Children grades feature coming soon!')">
+                            <i class="fas fa-chart-line"></i> Children's Grades
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'users:edit_user' user.id %}" class="nav-link">
+                            <i class="fas fa-user-edit"></i> Edit Profile
+                        </a>
+                    </li>
+                
+                <!-- Admin Menu -->
+                {% elif user.role == 'admin' %}
+                    <div class="menu-section">Core Management</div>
+                    <li class="nav-item">
+                        <a href="/classrooms/" class="nav-link">
+                            <i class="fas fa-school"></i> Classrooms
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/students/" class="nav-link">
+                            <i class="fas fa-user-graduate"></i> Students
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/teacherprofiles/" class="nav-link">
+                            <i class="fas fa-chalkboard-teacher"></i> Teachers
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/subjects/" class="nav-link">
+                            <i class="fas fa-book"></i> Subjects
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/subjectteachers/" class="nav-link">
+                            <i class="fas fa-link"></i> Subject Teachers
+                        </a>
+                    </li>
+                    
+                    <div class="menu-section">Academic Activities</div>
+                    <li class="nav-item">
+                        <a href="{% url 'assignments:assignments_router' %}" class="nav-link">
+                            <i class="fas fa-tasks"></i> Assignments
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/quizzes/" class="nav-link">
+                            <i class="fas fa-question-circle"></i> Quizzes
+                        </a>
+                    </li>
+                    
+                    <div class="menu-section">Attendance & Feedback</div>
+                    <li class="nav-item">
+                        <a href="/attendance/" class="nav-link attendance-link">
+                            <i class="fas fa-calendar-check"></i> Attendance
+                            <span class="nav-badge" id="attendance-badge" style="display: none;">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/feedback/" class="nav-link feedback-link">
+                            <i class="fas fa-comments"></i> Feedback
+                            <span class="nav-badge" id="feedback-badge" style="display: none;">0</span>
+                        </a>
+                    </li>
+                    
+                    <div class="menu-section advanced-section">Advanced Features</div>
+                    <li class="nav-item">
+                        <a href="/advanced/analytics/" class="nav-link advanced-link feature-new">
+                            <i class="fas fa-chart-line"></i> Analytics & Reports
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/advanced/bulk-operations/" class="nav-link advanced-link feature-new">
+                            <i class="fas fa-layer-group"></i> Bulk Operations
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/advanced/data-management/" class="nav-link advanced-link feature-new">
+                            <i class="fas fa-database"></i> Data Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/advanced/automation/" class="nav-link advanced-link feature-new">
+                            <i class="fas fa-robot"></i> Smart Automation
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/advanced/system-config/" class="nav-link advanced-link feature-new">
+                            <i class="fas fa-cogs"></i> System Configuration
+                        </a>
+                    </li>
+                {% endif %}
+            {% endif %}
+        </ul>
+        
+
+    </div>
+
+    <div class="content">
+        {% block content %}
+        <h1>Welcome to Smart Classroom Management System</h1>
+        {% endblock %}
+    </div>
+</div>
+
+<footer>
+    &copy; 2025 Smart Classroom Management System
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// Advanced Features Enhancements
+document.addEventListener('DOMContentLoaded', function() {
+    // Add dynamic badges for advanced features
+    updateAdvancedFeatureBadges();
+    
+    // Add hover effects for menu items
+    addMenuHoverEffects();
+    
+    // Add notification system
+    initNotificationSystem();
+    
+    // Add keyboard shortcuts
+    addKeyboardShortcuts();
+});
+
+function updateAdvancedFeatureBadges() {
+    // Simulate real-time data updates
+    const badges = {
+        'attendance-badge': Math.floor(Math.random() * 10),
+        'feedback-badge': Math.floor(Math.random() * 5)
+    };
+    
+    Object.keys(badges).forEach(badgeId => {
+        const badge = document.getElementById(badgeId);
+        if (badge && badges[badgeId] > 0) {
+            badge.textContent = badges[badgeId];
+            badge.style.display = 'flex';
+        }
+    });
+}
+
+function addMenuHoverEffects() {
+    // Simplified hover effects without sparkles
+    const advancedLinks = document.querySelectorAll('.nav-link.advanced-link');
+    advancedLinks.forEach(link => {
+        link.addEventListener('mouseenter', function() {
+            // Simple hover effect only
+        });
+    });
+}
+
+function initNotificationSystem() {
+    // Notification system disabled to prevent blur effects
+    console.log('Notification system disabled');
+}
+
+function showAdvancedFeatureNotification() {
+    // Notification disabled to prevent blur effects
+    console.log('Advanced Features Available!');
+}
+
+function addKeyboardShortcuts() {
+    document.addEventListener('keydown', function(e) {
+        // Ctrl + Shift + A for Analytics
+        if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+            e.preventDefault();
+            window.location.href = '/advanced/analytics/';
+        }
+        
+        // Ctrl + Shift + B for Bulk Operations
+        if (e.ctrlKey && e.shiftKey && e.key === 'B') {
+            e.preventDefault();
+            window.location.href = '/advanced/bulk-operations/';
+        }
+        
+        // Ctrl + Shift + D for Data Management
+        if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+            e.preventDefault();
+            window.location.href = '/advanced/data-management/';
+        }
+    });
+}
+
+// Simplified styling without blur effects
+const style = document.createElement('style');
+style.textContent = `
+    .nav-link.advanced-link {
+        position: relative;
+    }
+`;
+document.head.appendChild(style);
+</script>
+
+</body>
+</html>

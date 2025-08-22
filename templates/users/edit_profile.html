@@ -1,0 +1,669 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Profile - {{ user.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0 text-gradient">
+                        <i class="fas fa-user-edit me-2"></i>
+                        {% if editing_user %}Edit User Profile{% else %}Edit My Profile{% endif %}
+                    </h1>
+                    <p class="text-muted">
+                        {% if editing_user %}
+                            Editing profile for {{ user.get_full_name }}
+                        {% else %}
+                            Update your account information
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    {% if editing_user %}
+                        <a href="{% url 'users:user_detail' user.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to User
+                        </a>
+                    {% else %}
+                        <a href="{% url 'users:profile' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Profile
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" class="edit-profile-form">
+        {% csrf_token %}
+        
+        <div class="row">
+            <!-- Basic Information -->
+            <div class="col-md-8">
+                <div class="form-card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-user me-2"></i>Basic Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ user_form.first_name.id_for_label }}" class="form-label">
+                                    <i class="fas fa-user me-1"></i>First Name *
+                                </label>
+                                {{ user_form.first_name }}
+                                {% if user_form.first_name.errors %}
+                                    <div class="text-danger small">{{ user_form.first_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ user_form.last_name.id_for_label }}" class="form-label">
+                                    <i class="fas fa-user me-1"></i>Last Name *
+                                </label>
+                                {{ user_form.last_name }}
+                                {% if user_form.last_name.errors %}
+                                    <div class="text-danger small">{{ user_form.last_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ user_form.email.id_for_label }}" class="form-label">
+                                    <i class="fas fa-envelope me-1"></i>Email Address *
+                                </label>
+                                {{ user_form.email }}
+                                {% if user_form.email.errors %}
+                                    <div class="text-danger small">{{ user_form.email.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ user_form.phone_number.id_for_label }}" class="form-label">
+                                    <i class="fas fa-phone me-1"></i>Phone Number
+                                </label>
+                                {{ user_form.phone_number }}
+                                {% if user_form.phone_number.errors %}
+                                    <div class="text-danger small">{{ user_form.phone_number.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ user_form.date_of_birth.id_for_label }}" class="form-label">
+                                <i class="fas fa-calendar me-1"></i>Date of Birth
+                            </label>
+                            {{ user_form.date_of_birth }}
+                            {% if user_form.date_of_birth.errors %}
+                                <div class="text-danger small">{{ user_form.date_of_birth.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ user_form.address.id_for_label }}" class="form-label">
+                                <i class="fas fa-map-marker-alt me-1"></i>Address
+                            </label>
+                            {{ user_form.address }}
+                            {% if user_form.address.errors %}
+                                <div class="text-danger small">{{ user_form.address.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ user_form.profile_picture.id_for_label }}" class="form-label">
+                                <i class="fas fa-image me-1"></i>Profile Picture
+                            </label>
+                            {{ user_form.profile_picture }}
+                            {% if user_form.profile_picture.errors %}
+                                <div class="text-danger small">{{ user_form.profile_picture.errors.0 }}</div>
+                            {% endif %}
+                            {% if user.profile_picture %}
+                                <div class="current-image mt-2">
+                                    <small class="text-muted">Current image:</small><br>
+                                    <img src="{{ user.profile_picture.url }}" alt="Current profile picture" class="current-profile-img">
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Picture Preview -->
+            <div class="col-md-4">
+                <div class="profile-preview-card">
+                    <div class="card-header">
+                        <h6><i class="fas fa-eye me-2"></i>Profile Preview</h6>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="preview-avatar">
+                            {% if user.profile_picture %}
+                                <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="preview-img">
+                            {% else %}
+                                <div class="preview-placeholder">
+                                    {{ user.first_name.0|default:user.username.0 }}{{ user.last_name.0|default:'' }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <h5 class="preview-name">{{ user.get_full_name }}</h5>
+                        <span class="role-badge role-{{ user.role }}">
+                            <i class="fas fa-{% if user.role == 'admin' %}crown{% elif user.role == 'teacher' %}chalkboard-teacher{% elif user.role == 'student' %}graduation-cap{% else %}users{% endif %} me-1"></i>
+                            {{ user.get_role_display }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Role-specific Information -->
+        {% if profile_form %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="form-card">
+                    <div class="card-header">
+                        <h5>
+                            <i class="fas fa-{% if user.role == 'admin' %}crown{% elif user.role == 'teacher' %}chalkboard-teacher{% elif user.role == 'student' %}graduation-cap{% else %}users{% endif %} me-2"></i>
+                            {{ user.get_role_display }} Details
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if user.role == 'admin' %}
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ profile_form.department.id_for_label }}" class="form-label">
+                                        <i class="fas fa-building me-1"></i>Department
+                                    </label>
+                                    {{ profile_form.department }}
+                                    {% if profile_form.department.errors %}
+                                        <div class="text-danger small">{{ profile_form.department.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ profile_form.permissions_level.id_for_label }}" class="form-label">
+                                        <i class="fas fa-key me-1"></i>Permission Level
+                                    </label>
+                                    {{ profile_form.permissions_level }}
+                                    {% if profile_form.permissions_level.errors %}
+                                        <div class="text-danger small">{{ profile_form.permissions_level.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if profile.employee_id %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-id-badge me-2"></i>
+                                <strong>Employee ID:</strong> {{ profile.employee_id }}
+                            </div>
+                            {% endif %}
+
+                        {% elif user.role == 'teacher' %}
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ profile_form.department.id_for_label }}" class="form-label">
+                                        <i class="fas fa-building me-1"></i>Department
+                                    </label>
+                                    {{ profile_form.department }}
+                                    {% if profile_form.department.errors %}
+                                        <div class="text-danger small">{{ profile_form.department.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ profile_form.qualification.id_for_label }}" class="form-label">
+                                        <i class="fas fa-graduation-cap me-1"></i>Qualification
+                                    </label>
+                                    {{ profile_form.qualification }}
+                                    {% if profile_form.qualification.errors %}
+                                        <div class="text-danger small">{{ profile_form.qualification.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ profile_form.experience_years.id_for_label }}" class="form-label">
+                                        <i class="fas fa-clock me-1"></i>Experience (Years)
+                                    </label>
+                                    {{ profile_form.experience_years }}
+                                    {% if profile_form.experience_years.errors %}
+                                        <div class="text-danger small">{{ profile_form.experience_years.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ profile_form.specialization.id_for_label }}" class="form-label">
+                                        <i class="fas fa-star me-1"></i>Specialization
+                                    </label>
+                                    {{ profile_form.specialization }}
+                                    {% if profile_form.specialization.errors %}
+                                        <div class="text-danger small">{{ profile_form.specialization.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ profile_form.hire_date.id_for_label }}" class="form-label">
+                                        <i class="fas fa-calendar-plus me-1"></i>Hire Date
+                                    </label>
+                                    {{ profile_form.hire_date }}
+                                    {% if profile_form.hire_date.errors %}
+                                        <div class="text-danger small">{{ profile_form.hire_date.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ profile_form.salary.id_for_label }}" class="form-label">
+                                        <i class="fas fa-dollar-sign me-1"></i>Salary
+                                    </label>
+                                    {{ profile_form.salary }}
+                                    {% if profile_form.salary.errors %}
+                                        <div class="text-danger small">{{ profile_form.salary.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ profile_form.emergency_contact_name.id_for_label }}" class="form-label">
+                                        <i class="fas fa-user-friends me-1"></i>Emergency Contact Name
+                                    </label>
+                                    {{ profile_form.emergency_contact_name }}
+                                    {% if profile_form.emergency_contact_name.errors %}
+                                        <div class="text-danger small">{{ profile_form.emergency_contact_name.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ profile_form.emergency_contact_phone.id_for_label }}" class="form-label">
+                                        <i class="fas fa-phone-alt me-1"></i>Emergency Contact Phone
+                                    </label>
+                                    {{ profile_form.emergency_contact_phone }}
+                                    {% if profile_form.emergency_contact_phone.errors %}
+                                        <div class="text-danger small">{{ profile_form.emergency_contact_phone.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if profile.teacher_id or profile.employee_id %}
+                            <div class="alert alert-info">
+                                {% if profile.teacher_id %}
+                                    <i class="fas fa-id-badge me-2"></i>
+                                    <strong>Teacher ID:</strong> {{ profile.teacher_id }}
+                                {% endif %}
+                                {% if profile.employee_id %}
+                                    <br><i class="fas fa-id-card me-2"></i>
+                                    <strong>Employee ID:</strong> {{ profile.employee_id }}
+                                {% endif %}
+                            </div>
+                            {% endif %}
+
+                        {% elif user.role == 'student' %}
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ profile_form.roll_number.id_for_label }}" class="form-label">
+                                        <i class="fas fa-hashtag me-1"></i>Roll Number
+                                    </label>
+                                    {{ profile_form.roll_number }}
+                                    {% if profile_form.roll_number.errors %}
+                                        <div class="text-danger small">{{ profile_form.roll_number.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ profile_form.grade.id_for_label }}" class="form-label">
+                                        <i class="fas fa-layer-group me-1"></i>Grade
+                                    </label>
+                                    {{ profile_form.grade }}
+                                    {% if profile_form.grade.errors %}
+                                        <div class="text-danger small">{{ profile_form.grade.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ profile_form.classroom.id_for_label }}" class="form-label">
+                                        <i class="fas fa-door-open me-1"></i>Classroom
+                                    </label>
+                                    {{ profile_form.classroom }}
+                                    {% if profile_form.classroom.errors %}
+                                        <div class="text-danger small">{{ profile_form.classroom.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ profile_form.admission_date.id_for_label }}" class="form-label">
+                                        <i class="fas fa-calendar-plus me-1"></i>Admission Date
+                                    </label>
+                                    {{ profile_form.admission_date }}
+                                    {% if profile_form.admission_date.errors %}
+                                        <div class="text-danger small">{{ profile_form.admission_date.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <h6 class="section-subtitle mt-4 mb-3">
+                                <i class="fas fa-users me-2"></i>Parent/Guardian Information
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ profile_form.parent_guardian_name.id_for_label }}" class="form-label">
+                                        <i class="fas fa-user me-1"></i>Name
+                                    </label>
+                                    {{ profile_form.parent_guardian_name }}
+                                    {% if profile_form.parent_guardian_name.errors %}
+                                        <div class="text-danger small">{{ profile_form.parent_guardian_name.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ profile_form.parent_guardian_phone.id_for_label }}" class="form-label">
+                                        <i class="fas fa-phone me-1"></i>Phone
+                                    </label>
+                                    {{ profile_form.parent_guardian_phone }}
+                                    {% if profile_form.parent_guardian_phone.errors %}
+                                        <div class="text-danger small">{{ profile_form.parent_guardian_phone.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ profile_form.parent_guardian_email.id_for_label }}" class="form-label">
+                                        <i class="fas fa-envelope me-1"></i>Email
+                                    </label>
+                                    {{ profile_form.parent_guardian_email }}
+                                    {% if profile_form.parent_guardian_email.errors %}
+                                        <div class="text-danger small">{{ profile_form.parent_guardian_email.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <h6 class="section-subtitle mt-4 mb-3">
+                                <i class="fas fa-phone-alt me-2"></i>Emergency Contact
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ profile_form.emergency_contact_name.id_for_label }}" class="form-label">
+                                        <i class="fas fa-user-friends me-1"></i>Name
+                                    </label>
+                                    {{ profile_form.emergency_contact_name }}
+                                    {% if profile_form.emergency_contact_name.errors %}
+                                        <div class="text-danger small">{{ profile_form.emergency_contact_name.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ profile_form.emergency_contact_phone.id_for_label }}" class="form-label">
+                                        <i class="fas fa-phone-alt me-1"></i>Phone
+                                    </label>
+                                    {{ profile_form.emergency_contact_phone }}
+                                    {% if profile_form.emergency_contact_phone.errors %}
+                                        <div class="text-danger small">{{ profile_form.emergency_contact_phone.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <h6 class="section-subtitle mt-4 mb-3">
+                                <i class="fas fa-heartbeat me-2"></i>Medical Information
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ profile_form.blood_group.id_for_label }}" class="form-label">
+                                        <i class="fas fa-tint me-1"></i>Blood Group
+                                    </label>
+                                    {{ profile_form.blood_group }}
+                                    {% if profile_form.blood_group.errors %}
+                                        <div class="text-danger small">{{ profile_form.blood_group.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ profile_form.medical_conditions.id_for_label }}" class="form-label">
+                                        <i class="fas fa-notes-medical me-1"></i>Medical Conditions
+                                    </label>
+                                    {{ profile_form.medical_conditions }}
+                                    {% if profile_form.medical_conditions.errors %}
+                                        <div class="text-danger small">{{ profile_form.medical_conditions.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            {% if profile.student_id %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-id-badge me-2"></i>
+                                <strong>Student ID:</strong> {{ profile.student_id }}
+                            </div>
+                            {% endif %}
+
+                        {% elif user.role == 'parent' %}
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ profile_form.relationship.id_for_label }}" class="form-label">
+                                        <i class="fas fa-heart me-1"></i>Relationship
+                                    </label>
+                                    {{ profile_form.relationship }}
+                                    {% if profile_form.relationship.errors %}
+                                        <div class="text-danger small">{{ profile_form.relationship.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ profile_form.occupation.id_for_label }}" class="form-label">
+                                        <i class="fas fa-briefcase me-1"></i>Occupation
+                                    </label>
+                                    {{ profile_form.occupation }}
+                                    {% if profile_form.occupation.errors %}
+                                        <div class="text-danger small">{{ profile_form.occupation.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ profile_form.workplace.id_for_label }}" class="form-label">
+                                        <i class="fas fa-building me-1"></i>Workplace
+                                    </label>
+                                    {{ profile_form.workplace }}
+                                    {% if profile_form.workplace.errors %}
+                                        <div class="text-danger small">{{ profile_form.workplace.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ profile_form.work_phone.id_for_label }}" class="form-label">
+                                        <i class="fas fa-phone-square me-1"></i>Work Phone
+                                    </label>
+                                    {{ profile_form.work_phone }}
+                                    {% if profile_form.work_phone.errors %}
+                                        <div class="text-danger small">{{ profile_form.work_phone.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="{{ profile_form.students.id_for_label }}" class="form-label">
+                                    <i class="fas fa-child me-1"></i>Children (Students)
+                                </label>
+                                {{ profile_form.students }}
+                                {% if profile_form.students.errors %}
+                                    <div class="text-danger small">{{ profile_form.students.errors.0 }}</div>
+                                {% endif %}
+                                <div class="form-text">
+                                    <small>Select the students who are your children.</small>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Submit Buttons -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save me-2"></i>Save Changes
+                    </button>
+                    {% if editing_user %}
+                        <a href="{% url 'users:user_detail' user.id %}" class="btn btn-outline-secondary btn-lg ms-3">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                    {% else %}
+                        <a href="{% url 'users:profile' %}" class="btn btn-outline-secondary btn-lg ms-3">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+.text-gradient {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.form-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.form-card .card-header {
+    background: rgba(102, 126, 234, 0.1);
+    border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+    padding: 1.5rem;
+}
+
+.form-card .card-body {
+    padding: 2rem;
+}
+
+.profile-preview-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    overflow: hidden;
+    position: sticky;
+    top: 2rem;
+}
+
+.profile-preview-card .card-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 1rem;
+    text-align: center;
+}
+
+.profile-preview-card .card-body {
+    padding: 2rem;
+}
+
+.preview-avatar {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1rem;
+}
+
+.preview-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(102, 126, 234, 0.2);
+}
+
+.preview-placeholder {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.preview-name {
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+.role-badge {
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.role-admin { background: rgba(220, 53, 69, 0.2); color: #dc3545; }
+.role-teacher { background: rgba(40, 167, 69, 0.2); color: #28a745; }
+.role-student { background: rgba(0, 123, 255, 0.2); color: #007bff; }
+.role-parent { background: rgba(255, 193, 7, 0.2); color: #ffc107; }
+
+.edit-profile-form .form-control,
+.edit-profile-form .form-select {
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.edit-profile-form .form-control:focus,
+.edit-profile-form .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.section-subtitle {
+    color: #667eea;
+    font-weight: 600;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+}
+
+.current-profile-img {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 2px solid #e9ecef;
+}
+
+.form-actions {
+    background: rgba(102, 126, 234, 0.05);
+    padding: 2rem;
+    border-radius: 15px;
+    text-align: center;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-outline-secondary {
+    border-radius: 10px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+</style>
+{% endblock %}

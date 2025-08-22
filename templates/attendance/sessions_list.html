@@ -1,0 +1,553 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0 text-gradient">
+                        <i class="fas fa-list me-2"></i>Attendance Sessions
+                    </h1>
+                    <p class="text-muted">Manage and monitor all your attendance sessions</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'attendance:attendance_session_create' %}" class="btn btn-primary btn-animated">
+                        <i class="fas fa-plus me-2"></i>New Session
+                    </a>
+                    <a href="{% url 'attendance:attendance_reports' %}" class="btn btn-outline-info btn-animated">
+                        <i class="fas fa-chart-bar me-2"></i>Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="filter-card">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">All Statuses</option>
+                            <option value="active" {% if current_filters.status == 'active' %}selected{% endif %}>Active</option>
+                            <option value="completed" {% if current_filters.status == 'completed' %}selected{% endif %}>Completed</option>
+                            <option value="cancelled" {% if current_filters.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="classroom" class="form-label">Classroom</label>
+                        <select class="form-select" id="classroom" name="classroom">
+                            <option value="">All Classrooms</option>
+                            {% for classroom in classrooms %}
+                            <option value="{{ classroom.id }}" {% if current_filters.classroom == classroom.id|stringformat:"s" %}selected{% endif %}>
+                                {{ classroom.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="subject" class="form-label">Subject</label>
+                        <select class="form-select" id="subject" name="subject">
+                            <option value="">All Subjects</option>
+                            {% for subject in subjects %}
+                            <option value="{{ subject.id }}" {% if current_filters.subject == subject.id|stringformat:"s" %}selected{% endif %}>
+                                {{ subject.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="date" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="date" name="date" value="{{ current_filters.date }}">
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter me-2"></i>Apply Filters
+                        </button>
+                        <a href="{% url 'attendance:attendance_sessions_list' %}" class="btn btn-outline-secondary ms-2">
+                            <i class="fas fa-times me-2"></i>Clear
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sessions List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="sessions-container">
+                {% if page_obj %}
+                    <div class="sessions-grid">
+                        {% for session in page_obj %}
+                        <div class="session-card" data-session-id="{{ session.id }}">
+                            <div class="session-header">
+                                <div class="session-status">
+                                    <span class="status-indicator status-{{ session.status }}"></span>
+                                    <span class="status-text">{{ session.get_status_display }}</span>
+                                </div>
+                                <div class="session-actions">
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item" href="{% url 'attendance:attendance_session_detail' session.id %}">
+                                                <i class="fas fa-eye me-2"></i>View Details
+                                            </a></li>
+                                            {% if session.status == 'active' %}
+                                            <li><a class="dropdown-item" href="#" onclick="markAllPresent({{ session.id }})">
+                                                <i class="fas fa-check me-2"></i>Mark All Present
+                                            </a></li>
+                                            <li><a class="dropdown-item" href="#" onclick="closeSession({{ session.id }})">
+                                                <i class="fas fa-stop me-2"></i>Close Session
+                                            </a></li>
+                                            {% endif %}
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item text-danger" href="#" onclick="deleteSession({{ session.id }})">
+                                                <i class="fas fa-trash me-2"></i>Delete
+                                            </a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="session-content">
+                                <h5 class="session-title">{{ session.title }}</h5>
+                                <p class="session-description">{{ session.description|truncatechars:100 }}</p>
+                                
+                                <div class="session-meta">
+                                    <div class="meta-item">
+                                        <i class="fas fa-school"></i>
+                                        <span>{{ session.classroom.name }}</span>
+                                    </div>
+                                    {% if session.subject %}
+                                    <div class="meta-item">
+                                        <i class="fas fa-book"></i>
+                                        <span>{{ session.subject.name }}</span>
+                                    </div>
+                                    {% endif %}
+                                    <div class="meta-item">
+                                        <i class="fas fa-clock"></i>
+                                        <span>{{ session.start_time|date:"M d, H:i" }}</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <i class="fas fa-tag"></i>
+                                        <span class="badge bg-info">{{ session.get_attendance_type_display }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="session-stats">
+                                <div class="stats-grid">
+                                    <div class="stat-item">
+                                        <div class="stat-number">{{ session.total_students }}</div>
+                                        <div class="stat-label">Total</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-number text-success">{{ session.present_count }}</div>
+                                        <div class="stat-label">Present</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-number text-warning">{{ session.late_count }}</div>
+                                        <div class="stat-label">Late</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-number text-danger">{{ session.absent_count }}</div>
+                                        <div class="stat-label">Absent</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="attendance-progress">
+                                    <div class="progress">
+                                        <div class="progress-bar bg-success" style="width: {{ session.attendance_percentage }}%"></div>
+                                    </div>
+                                    <div class="progress-text">{{ session.attendance_percentage }}% attendance</div>
+                                </div>
+                            </div>
+                            
+                            <div class="session-footer">
+                                <a href="{% url 'attendance:attendance_session_detail' session.id %}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-eye me-2"></i>View Details
+                                </a>
+                                {% if session.status == 'active' %}
+                                <button class="btn btn-success btn-sm" onclick="quickMark({{ session.id }})">
+                                    <i class="fas fa-check me-2"></i>Quick Mark
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Pagination -->
+                    {% if page_obj.has_other_pages %}
+                    <div class="pagination-container">
+                        <nav aria-label="Sessions pagination">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                                {% endif %}
+                                
+                                {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                                </li>
+                                {% endif %}
+                                {% endfor %}
+                                
+                                {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                    {% endif %}
+                    
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <i class="fas fa-calendar-times"></i>
+                        </div>
+                        <h4>No Sessions Found</h4>
+                        <p class="text-muted">No attendance sessions match your current filters.</p>
+                        <a href="{% url 'attendance:attendance_session_create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Create Your First Session
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Styles -->
+<style>
+.text-gradient {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.filter-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.sessions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 25px;
+}
+
+.session-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    overflow: hidden;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.session-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+
+.session-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 20px 0;
+}
+
+.session-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.status-indicator.status-active {
+    background: #28a745;
+}
+
+.status-indicator.status-completed {
+    background: #6c757d;
+    animation: none;
+}
+
+.status-indicator.status-cancelled {
+    background: #dc3545;
+    animation: none;
+}
+
+.status-text {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.session-content {
+    padding: 0 20px 20px;
+}
+
+.session-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.session-description {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+    line-height: 1.4;
+}
+
+.session-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.meta-item i {
+    width: 14px;
+    color: #667eea;
+}
+
+.session-stats {
+    background: #f8f9fa;
+    padding: 15px 20px;
+    border-top: 1px solid #e9ecef;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.attendance-progress {
+    margin-bottom: 15px;
+}
+
+.progress {
+    height: 8px;
+    border-radius: 4px;
+    background: #e9ecef;
+    margin-bottom: 5px;
+}
+
+.progress-text {
+    font-size: 0.8rem;
+    color: #666;
+    text-align: center;
+}
+
+.session-footer {
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    gap: 10px;
+}
+
+.btn-animated {
+    transition: all 0.3s ease;
+}
+
+.btn-animated:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #dee2e6;
+    margin-bottom: 20px;
+}
+
+.pagination-container {
+    margin-top: 40px;
+}
+
+.pagination .page-link {
+    border-radius: 8px;
+    margin: 0 2px;
+    border: 1px solid #dee2e6;
+    color: #667eea;
+}
+
+.pagination .page-item.active .page-link {
+    background: #667eea;
+    border-color: #667eea;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+}
+</style>
+
+<!-- JavaScript -->
+<script>
+function markAllPresent(sessionId) {
+    if (confirm('Mark all students as present for this session?')) {
+        fetch(`/attendance/sessions/${sessionId}/mark-all/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ status: 'present' })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('All students marked as present!', 'success');
+                location.reload();
+            } else {
+                showToast('Error: ' + data.message, 'error');
+            }
+        });
+    }
+}
+
+function closeSession(sessionId) {
+    if (confirm('Close this attendance session?')) {
+        fetch(`/attendance/sessions/${sessionId}/close/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Session closed successfully!', 'success');
+                location.reload();
+            } else {
+                showToast('Error: ' + data.message, 'error');
+            }
+        });
+    }
+}
+
+function deleteSession(sessionId) {
+    if (confirm('Are you sure you want to delete this session? This action cannot be undone.')) {
+        fetch(`/attendance/sessions/${sessionId}/delete/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Session deleted successfully!', 'success');
+                location.reload();
+            } else {
+                showToast('Error: ' + data.message, 'error');
+            }
+        });
+    }
+}
+
+function quickMark(sessionId) {
+    window.location.href = `/attendance/sessions/${sessionId}/`;
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'error' ? 'danger' : type} position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 5000);
+}
+
+// Add CSRF token to all requests
+document.addEventListener('DOMContentLoaded', function() {
+    // Add CSRF token if not present
+    if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = '{{ csrf_token }}';
+        document.body.appendChild(csrfInput);
+    }
+});
+</script>
+{% endblock %}

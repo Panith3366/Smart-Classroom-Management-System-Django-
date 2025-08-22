@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Add New Quiz</h1>
+        <a href="{% url 'quizzes_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Quizzes
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Quiz Information</h6>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label for="title" class="form-label">Quiz Title *</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="subject" class="form-label">Subject *</label>
+                        <select class="form-control" id="subject" name="subject" required>
+                            <option value="">Select Subject</option>
+                            {% for subject in subjects %}
+                                <option value="{{ subject.id }}">{{ subject.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="classroom" class="form-label">Classroom *</label>
+                        <select class="form-control" id="classroom" name="classroom" required>
+                            <option value="">Select Classroom</option>
+                            {% for classroom in classrooms %}
+                                <option value="{{ classroom.id }}">{{ classroom.name }} - Grade {{ classroom.grade }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Questions</label>
+                    <div id="questions-container">
+                        <div class="question-item border p-3 mb-3">
+                            <div class="row">
+                                <div class="col-md-12 mb-2">
+                                    <label class="form-label">Question 1</label>
+                                    <input type="text" class="form-control question-text" placeholder="Enter question">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-2">
+                                    <input type="text" class="form-control option-a" placeholder="Option A">
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <input type="text" class="form-control option-b" placeholder="Option B">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-2">
+                                    <input type="text" class="form-control option-c" placeholder="Option C">
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <input type="text" class="form-control option-d" placeholder="Option D">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">Correct Answer</label>
+                                    <select class="form-control correct-answer">
+                                        <option value="A">A</option>
+                                        <option value="B">B</option>
+                                        <option value="C">C</option>
+                                        <option value="D">D</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 d-flex align-items-end">
+                                    <button type="button" class="btn btn-danger btn-sm remove-question">
+                                        <i class="fas fa-trash"></i> Remove
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="btn btn-success" id="add-question">
+                        <i class="fas fa-plus"></i> Add Question
+                    </button>
+                </div>
+                
+                <input type="hidden" name="questions" id="questions-json">
+                
+                <div class="d-flex justify-content-end">
+                    <a href="{% url 'quizzes_list' %}" class="btn btn-secondary me-2">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Quiz
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let questionCount = 1;
+
+document.getElementById('add-question').addEventListener('click', function() {
+    questionCount++;
+    const container = document.getElementById('questions-container');
+    const questionHtml = `
+        <div class="question-item border p-3 mb-3">
+            <div class="row">
+                <div class="col-md-12 mb-2">
+                    <label class="form-label">Question ${questionCount}</label>
+                    <input type="text" class="form-control question-text" placeholder="Enter question">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-2">
+                    <input type="text" class="form-control option-a" placeholder="Option A">
+                </div>
+                <div class="col-md-6 mb-2">
+                    <input type="text" class="form-control option-b" placeholder="Option B">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-2">
+                    <input type="text" class="form-control option-c" placeholder="Option C">
+                </div>
+                <div class="col-md-6 mb-2">
+                    <input type="text" class="form-control option-d" placeholder="Option D">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="form-label">Correct Answer</label>
+                    <select class="form-control correct-answer">
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                        <option value="D">D</option>
+                    </select>
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                    <button type="button" class="btn btn-danger btn-sm remove-question">
+                        <i class="fas fa-trash"></i> Remove
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', questionHtml);
+});
+
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('remove-question') || e.target.parentElement.classList.contains('remove-question')) {
+        const questionItem = e.target.closest('.question-item');
+        if (document.querySelectorAll('.question-item').length > 1) {
+            questionItem.remove();
+            updateQuestionNumbers();
+        } else {
+            alert('At least one question is required.');
+        }
+    }
+});
+
+function updateQuestionNumbers() {
+    const questions = document.querySelectorAll('.question-item');
+    questions.forEach((question, index) => {
+        const label = question.querySelector('label');
+        label.textContent = `Question ${index + 1}`;
+    });
+    questionCount = questions.length;
+}
+
+document.querySelector('form').addEventListener('submit', function(e) {
+    const questions = [];
+    document.querySelectorAll('.question-item').forEach(function(item) {
+        const question = {
+            text: item.querySelector('.question-text').value,
+            options: {
+                A: item.querySelector('.option-a').value,
+                B: item.querySelector('.option-b').value,
+                C: item.querySelector('.option-c').value,
+                D: item.querySelector('.option-d').value
+            },
+            correct_answer: item.querySelector('.correct-answer').value
+        };
+        questions.push(question);
+    });
+    document.getElementById('questions-json').value = JSON.stringify(questions);
+});
+</script>
+
+<!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}

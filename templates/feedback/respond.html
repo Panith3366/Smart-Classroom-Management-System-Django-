@@ -1,0 +1,789 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0 text-gradient-feedback">
+                        <i class="fas fa-edit me-2"></i>Submit Feedback
+                    </h1>
+                    <p class="text-muted">{{ session.title }}</p>
+                </div>
+                <a href="{% url 'feedback:feedback_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Feedback
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Session Info -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="session-info-card">
+                <div class="session-header" style="background: {{ session.category.color }}">
+                    <div class="category-info">
+                        <i class="{{ session.category.icon }}"></i>
+                        <span>{{ session.category.name }}</span>
+                    </div>
+                    {% if session.end_date %}
+                    <div class="deadline-info">
+                        <i class="fas fa-clock"></i>
+                        <span>Due: {{ session.end_date|date:"M d, Y H:i" }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="session-body">
+                    <h4>{{ session.title }}</h4>
+                    {% if session.description %}
+                    <p class="session-description">{{ session.description }}</p>
+                    {% endif %}
+                    
+                    <div class="session-meta">
+                        {% if session.classroom %}
+                        <div class="meta-item">
+                            <i class="fas fa-school"></i>
+                            <span>{{ session.classroom.name }}</span>
+                        </div>
+                        {% endif %}
+                        {% if session.subject %}
+                        <div class="meta-item">
+                            <i class="fas fa-book"></i>
+                            <span>{{ session.subject.name }}</span>
+                        </div>
+                        {% endif %}
+                        {% if session.allow_anonymous %}
+                        <div class="meta-item">
+                            <i class="fas fa-user-secret"></i>
+                            <span>Anonymous Response</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Form -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="feedback-form-container">
+                <form method="post" id="feedbackForm">
+                    {% csrf_token %}
+                    
+                    {% if session.template and session.template.questions %}
+                        {% for question in session.template.questions %}
+                        <div class="question-card" data-question-index="{{ forloop.counter0 }}">
+                            <div class="question-header">
+                                <div class="question-number">{{ forloop.counter }}</div>
+                                <div class="question-text">{{ question.question }}</div>
+                                {% if question.required %}
+                                <span class="required-indicator">*</span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="question-body">
+                                {% if question.type == 'text' %}
+                                    <textarea class="form-control modern-textarea" 
+                                              name="question_{{ forloop.counter0 }}" 
+                                              rows="4" 
+                                              placeholder="Enter your response..."
+                                              {% if question.required %}required{% endif %}></textarea>
+                                
+                                {% elif question.type == 'rating' %}
+                                    <div class="rating-input">
+                                        {% for i in "12345"|make_list %}
+                                        <label class="rating-star">
+                                            <input type="radio" name="question_{{ forloop.parentloop.counter0 }}" 
+                                                   value="{{ i }}" {% if question.required %}required{% endif %}>
+                                            <i class="fas fa-star"></i>
+                                            <span class="rating-label">{{ i }}</span>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="rating-labels">
+                                        <span>Poor</span>
+                                        <span>Excellent</span>
+                                    </div>
+                                
+                                {% elif question.type == 'multiple_choice' %}
+                                    <div class="choice-options">
+                                        {% for option in question.options %}
+                                        <label class="choice-option">
+                                            <input type="radio" name="question_{{ forloop.parentloop.counter0 }}" 
+                                                   value="{{ option }}" {% if question.required %}required{% endif %}>
+                                            <span class="choice-text">{{ option }}</span>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                
+                                {% elif question.type == 'yes_no' %}
+                                    <div class="yes-no-input">
+                                        <label class="yes-no-option yes-option">
+                                            <input type="radio" name="question_{{ forloop.counter0 }}" 
+                                                   value="yes" {% if question.required %}required{% endif %}>
+                                            <i class="fas fa-check"></i>
+                                            <span>Yes</span>
+                                        </label>
+                                        <label class="yes-no-option no-option">
+                                            <input type="radio" name="question_{{ forloop.counter0 }}" 
+                                                   value="no" {% if question.required %}required{% endif %}>
+                                            <i class="fas fa-times"></i>
+                                            <span>No</span>
+                                        </label>
+                                    </div>
+                                
+                                {% elif question.type == 'scale' %}
+                                    <div class="scale-input">
+                                        <input type="range" class="form-range scale-slider" 
+                                               name="question_{{ forloop.counter0 }}" 
+                                               min="1" max="{{ question.scale|default:10 }}" 
+                                               value="{{ question.scale|default:10|floatformat:0|div:2 }}"
+                                               {% if question.required %}required{% endif %}>
+                                        <div class="scale-labels">
+                                            <span>1</span>
+                                            <span class="scale-value">5</span>
+                                            <span>{{ question.scale|default:10 }}</span>
+                                        </div>
+                                    </div>
+                                
+                                {% elif question.type == 'emoji' %}
+                                    <div class="emoji-input">
+                                        <label class="emoji-option">
+                                            <input type="radio" name="question_{{ forloop.counter0 }}" 
+                                                   value="very_sad" {% if question.required %}required{% endif %}>
+                                            <span class="emoji">😢</span>
+                                            <span class="emoji-label">Very Sad</span>
+                                        </label>
+                                        <label class="emoji-option">
+                                            <input type="radio" name="question_{{ forloop.counter0 }}" 
+                                                   value="sad" {% if question.required %}required{% endif %}>
+                                            <span class="emoji">😞</span>
+                                            <span class="emoji-label">Sad</span>
+                                        </label>
+                                        <label class="emoji-option">
+                                            <input type="radio" name="question_{{ forloop.counter0 }}" 
+                                                   value="neutral" {% if question.required %}required{% endif %}>
+                                            <span class="emoji">😐</span>
+                                            <span class="emoji-label">Neutral</span>
+                                        </label>
+                                        <label class="emoji-option">
+                                            <input type="radio" name="question_{{ forloop.counter0 }}" 
+                                                   value="happy" {% if question.required %}required{% endif %}>
+                                            <span class="emoji">😊</span>
+                                            <span class="emoji-label">Happy</span>
+                                        </label>
+                                        <label class="emoji-option">
+                                            <input type="radio" name="question_{{ forloop.counter0 }}" 
+                                                   value="very_happy" {% if question.required %}required{% endif %}>
+                                            <span class="emoji">😄</span>
+                                            <span class="emoji-label">Very Happy</span>
+                                        </label>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="no-questions">
+                            <div class="empty-icon">
+                                <i class="fas fa-question-circle"></i>
+                            </div>
+                            <h4>No Questions Available</h4>
+                            <p class="text-muted">This feedback session doesn't have any questions configured yet.</p>
+                        </div>
+                    {% endif %}
+                    
+                    {% if session.template and session.template.questions %}
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline-secondary" onclick="saveDraft()">
+                            <i class="fas fa-save me-2"></i>Save as Draft
+                        </button>
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-paper-plane me-2"></i>Submit Feedback
+                        </button>
+                    </div>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+        
+        <!-- Progress Sidebar -->
+        <div class="col-lg-4">
+            <div class="progress-sidebar sticky-top">
+                <div class="progress-header">
+                    <h6><i class="fas fa-tasks me-2"></i>Progress</h6>
+                </div>
+                <div class="progress-body">
+                    <div class="completion-circle">
+                        <div class="circle-progress" data-percentage="0">
+                            <span class="percentage-text">0%</span>
+                        </div>
+                    </div>
+                    <div class="progress-stats">
+                        <div class="stat-item">
+                            <span class="stat-number" id="answered-count">0</span>
+                            <span class="stat-label">Answered</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">
+                                {% if session.template and session.template.questions %}
+                                    {{ session.template.questions|length }}
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </span>
+                            <span class="stat-label">Total</span>
+                        </div>
+                    </div>
+                    
+                    <div class="question-progress">
+                        <h6>Questions</h6>
+                        <div class="question-list">
+                            {% if session.template and session.template.questions %}
+                                {% for question in session.template.questions %}
+                                <div class="question-progress-item" data-question="{{ forloop.counter0 }}">
+                                    <div class="question-indicator"></div>
+                                    <span class="question-title">Question {{ forloop.counter }}</span>
+                                    <i class="fas fa-check question-check"></i>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-muted text-center">
+                                    <small>No questions available</small>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Styles -->
+<style>
+.text-gradient-feedback {
+    background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #f5576c);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradientShift 4s ease infinite;
+}
+
+@keyframes gradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+.session-info-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+
+.session-header {
+    padding: 20px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.category-info, .deadline-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+}
+
+.session-body {
+    padding: 25px;
+}
+
+.session-body h4 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.session-description {
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.session-meta {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.meta-item i {
+    color: #667eea;
+}
+
+.feedback-form-container {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.question-card {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 25px;
+    transition: all 0.3s ease;
+}
+
+.question-card:hover {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.question-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.question-number {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.question-text {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #333;
+    flex: 1;
+}
+
+.required-indicator {
+    color: #dc3545;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.modern-textarea {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    resize: vertical;
+}
+
+.modern-textarea:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.rating-input {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.rating-star {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.3s ease;
+}
+
+.rating-star input {
+    display: none;
+}
+
+.rating-star i {
+    font-size: 2rem;
+    color: #ddd;
+    transition: all 0.3s ease;
+}
+
+.rating-star:hover i,
+.rating-star input:checked ~ i {
+    color: #ffc107;
+    transform: scale(1.1);
+}
+
+.rating-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.choice-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.choice-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px;
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.choice-option:hover {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.choice-option input:checked ~ .choice-text {
+    color: #667eea;
+    font-weight: 500;
+}
+
+.choice-option input {
+    margin: 0;
+}
+
+.yes-no-input {
+    display: flex;
+    gap: 20px;
+}
+
+.yes-no-option {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 20px;
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.yes-no-option:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.yes-option:hover,
+.yes-option input:checked ~ * {
+    border-color: #28a745;
+    color: #28a745;
+}
+
+.no-option:hover,
+.no-option input:checked ~ * {
+    border-color: #dc3545;
+    color: #dc3545;
+}
+
+.yes-no-option input {
+    display: none;
+}
+
+.yes-no-option i {
+    font-size: 2rem;
+}
+
+.scale-input {
+    padding: 20px;
+}
+
+.scale-slider {
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.scale-labels {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 500;
+}
+
+.scale-value {
+    background: #667eea;
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 1.1rem;
+}
+
+.emoji-input {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.emoji-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 15px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.emoji-option:hover {
+    background: rgba(102, 126, 234, 0.1);
+    transform: scale(1.05);
+}
+
+.emoji-option input {
+    display: none;
+}
+
+.emoji-option input:checked ~ .emoji {
+    transform: scale(1.2);
+}
+
+.emoji-option input:checked ~ .emoji-label {
+    color: #667eea;
+    font-weight: bold;
+}
+
+.emoji {
+    font-size: 2.5rem;
+    transition: all 0.3s ease;
+}
+
+.emoji-label {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 1px solid #e9ecef;
+}
+
+.progress-sidebar {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    top: 20px;
+}
+
+.progress-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 20px;
+    border-radius: 15px 15px 0 0;
+}
+
+.progress-body {
+    padding: 25px;
+}
+
+.completion-circle {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.circle-progress {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: conic-gradient(#667eea 0deg, #667eea var(--percentage, 0deg), #e9ecef var(--percentage, 0deg));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    position: relative;
+}
+
+.circle-progress::before {
+    content: '';
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: white;
+    position: absolute;
+}
+
+.percentage-text {
+    position: relative;
+    z-index: 2;
+    font-weight: bold;
+    color: #333;
+}
+
+.progress-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 25px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-number {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #667eea;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #666;
+    text-transform: uppercase;
+}
+
+.question-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.question-progress-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.question-progress-item.answered {
+    background: rgba(40, 167, 69, 0.1);
+}
+
+.question-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.question-progress-item.answered .question-indicator {
+    background: #28a745;
+}
+
+.question-title {
+    flex: 1;
+    font-size: 0.9rem;
+}
+
+.question-check {
+    color: #28a745;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.question-progress-item.answered .question-check {
+    opacity: 1;
+}
+
+.no-questions {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #dee2e6;
+    margin-bottom: 20px;
+}
+</style>
+
+<!-- JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('feedbackForm');
+    const questions = document.querySelectorAll('.question-card');
+    const totalQuestions = questions.length;
+    
+    // Update progress when inputs change
+    form.addEventListener('change', updateProgress);
+    form.addEventListener('input', updateProgress);
+    
+    // Scale slider updates
+    document.querySelectorAll('.scale-slider').forEach(slider => {
+        slider.addEventListener('input', function() {
+            const valueDisplay = this.parentElement.querySelector('.scale-value');
+            valueDisplay.textContent = this.value;
+        });
+    });
+    
+    function updateProgress() {
+        let answeredCount = 0;
+        
+        questions.forEach((question, index) => {
+            const inputs = question.querySelectorAll('input, textarea');
+            let isAnswered = false;
+            
+            inputs.forEach(input => {
+                if (input.type === 'radio' && input.checked) {
+                    isAnswered = true;
+                } else if (input.type === 'range' && input.value) {
+                    isAnswered = true;
+                } else if (input.tagName === 'TEXTAREA' && input.value.trim()) {
+                    isAnswered = true;
+                }
+            });
+            
+            if (isAnswered) {
+                answeredCount++;
+                document.querySelector(`[data-question="${index}"]`).classList.add('answered');
+            } else {
+                document.querySelector(`[data-question="${index}"]`).classList.remove('answered');
+            }
+        });
+        
+        // Update progress display
+        const percentage = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
+        const degrees = (percentage / 100) * 360;
+        
+        document.querySelector('.circle-progress').style.setProperty('--percentage', degrees + 'deg');
+        document.querySelector('.percentage-text').textContent = Math.round(percentage) + '%';
+        document.getElementById('answered-count').textContent = answeredCount;
+    }
+    
+    // Initial progress update
+    updateProgress();
+});
+
+function saveDraft() {
+    // Implementation for saving draft
+    alert('Draft saved! (Feature coming soon)');
+}
+</script>
+{% endblock %}
